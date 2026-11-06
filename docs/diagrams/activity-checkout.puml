@@ -1,0 +1,52 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam backgroundColor white
+|Customer|
+start
+:Browse menu and select options;
+:Add / edit cart;
+if (Logged in?) then (no)
+  :Register or login;
+  |NestJS API|
+  :Validate credentials and issue JWT;
+endif
+|Customer|
+:Choose method and confirm;
+|Next.js UI|
+:Validate form; POST /orders;
+|NestJS API|
+:JWT + DTO + transaction;
+if (Stock and promotion valid?) then (no)
+  :Rollback, 409 / 422;
+  |Next.js UI|
+  :Show error; preserve cart;
+  stop
+else (yes)
+  :Optimistic reserve stock;
+  :Create PENDING; commit;
+endif
+|Next.js UI|
+:Persist orderId and key;
+:POST /payments;
+|NestJS API|
+:Lock order; claim unique key;
+|Payment Service|
+:Mock charge;
+if (Success?) then (yes)
+  |NestJS API|
+  :Atomic PAID + payment + loyalty;
+  |Next.js UI|
+  :Clear cart; show confirmation;
+else (no)
+  |NestJS API|
+  :PAYMENT_FAILED;
+  |Next.js UI|
+  :Keep cart and orderId;
+  |Customer|
+  :Retry same order with new key or cancel;
+endif
+stop
+
+@enduml

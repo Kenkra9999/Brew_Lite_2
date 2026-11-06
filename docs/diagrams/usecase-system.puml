@@ -1,0 +1,32 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam backgroundColor white
+left to right direction
+actor Customer as C
+actor Staff as S
+actor "Mock Payment Service" as P
+rectangle BrewLite {
+usecase "UC-01 Menu and product" as U1
+usecase "UC-02 Manage cart" as U2
+usecase "UC-03 Register / Login" as U3
+usecase "UC-04 Order and pay" as U4
+usecase "UC-05 History and tracking" as U5
+usecase "UC-06 Prepare orders" as U6
+usecase "Validate JWT" as JWT
+usecase "Apply promotion" as Promo
+}
+C --> U1
+C --> U2
+C --> U3
+C --> U4
+C --> U5
+S --> U6
+P --> U4
+U4 .> JWT : <<include>>
+U5 .> JWT : <<include>>
+U6 .> JWT : <<include>>
+Promo .> U4 : <<extend>>
+
+@enduml

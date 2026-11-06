@@ -1,0 +1,63 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam backgroundColor white
+actor Customer as C
+participant "Next.js UI" as UI
+participant "NestJS API" as API
+database PostgreSQL as DB
+participant "Payment Service (mock)" as PG
+C -> UI : Confirm cart and method
+UI -> API : POST /orders + Bearer JWT
+API -> API : Verify JWT; validate DTO
+group Create order transaction
+API -> DB : BEGIN; read products and toppings
+API -> DB : UPDATE Product WHERE version=v AND stock>=qty
+alt Stock conflict
+DB --> API : 0 rows
+API -> DB : ROLLBACK; retry / reject 409
+else Available
+API -> DB : Validate promotion; create PENDING + items
+API -> DB : COMMIT
+end
+end
+API --> UI : 201 orderId, authoritative total
+UI -> UI : Save orderId and Idempotency-Key
+UI -> API : POST /payments {orderId,method} + key + JWT
+API -> API : JWT + DTO + hash(user,order,method)
+API -> DB : Lookup key
+alt Existing matching payment
+API -> DB : Wait for result if PROCESSING
+API --> UI : Replay same payment (no charge)
+else New key
+group Claim transaction
+API -> DB : BEGIN; SELECT Order FOR UPDATE
+API -> DB : Recheck key; verify owner/state/in-flight
+API -> DB : Create PROCESSING; COMMIT
+end
+API -> PG : charge(key, amount, method)
+PG --> API : Success / failure
+group Result transaction
+API -> DB : BEGIN; SELECT Order FOR UPDATE
+alt Success
+API -> DB : Payment SUCCEEDED; Order PAID; award loyalty
+else Failure
+API -> DB : Payment FAILED; Order PAYMENT_FAILED
+end
+API -> DB : COMMIT
+end
+API --> UI : Payment and order result
+end
+alt PAID
+UI -> UI : Clear cart
+UI --> C : Code + PAID + tracking
+else PAYMENT_FAILED
+UI --> C : Error; preserve cart; retry same order
+end
+note over API,PG
+Mock only: crash recovery across the two transactions
+needs reconciliation before using a real gateway.
+end note
+
+@enduml

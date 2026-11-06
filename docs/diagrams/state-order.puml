@@ -1,0 +1,19 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam backgroundColor white
+[*] --> PENDING
+PENDING --> PAID : payment succeeds
+PENDING --> PAYMENT_FAILED : payment fails
+PAYMENT_FAILED --> PENDING : retry new attempt
+PENDING --> CANCELLED : customer/staff cancel
+PAYMENT_FAILED --> CANCELLED : cancel
+PAID --> CANCELLED : staff mock refund
+PAID --> PREPARING : staff accepts
+PREPARING --> READY : ready
+READY --> COMPLETED : collected
+CANCELLED --> [*]
+COMPLETED --> [*]
+
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam backgroundColor white
+left to right direction
+actor Customer as C
+actor "Mock gateway" as G
+rectangle "UC-04 Checkout" {
+usecase "Place and pay order" as Pay
+usecase "Validate JWT and DTO" as V
+usecase "Reserve stock and calculate price" as R
+usecase "Process payment with key" as K
+usecase "Apply promotion" as P
+usecase "Retry failed payment" as Retry
+}
+C --> Pay
+G --> K
+Pay .> V : <<include>>
+Pay .> R : <<include>>
+Pay .> K : <<include>>
+P .> Pay : <<extend>>
+Retry .> Pay : <<extend>>
+
+@enduml

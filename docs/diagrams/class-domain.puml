@@ -1,0 +1,125 @@
+@startuml
+!pragma layout smetana
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam backgroundColor white
+hide methods
+class User {
+ id: Int
+ email: String
+ passwordHash: String
+ role: Role
+ loyaltyPoints: Int
+}
+class Product {
+ id: Int
+ name: String
+ price: Int
+ stock: Int
+ version: Int
+}
+class Order {
+ id: Int
+ status: OrderStatus
+ subtotal: Int
+ discount: Int
+ total: Int
+ version: Int
+ pointsEarned: Int
+}
+class OrderItem {
+ productName: String
+ size: Size
+ qty: Int
+ toppings: Json
+ unitPrice: Int
+ lineTotal: Int
+}
+class Payment {
+ idempotencyKey: String <<unique>>
+ requestHash: String
+ amount: Int
+ method: PaymentMethod
+ status: PaymentStatus
+}
+class Promotion {
+ code: String <<unique>>
+ type: DiscountType
+ value: Int
+ minOrderAmount: Int
+ maxDiscount: Int?
+ usageLimit: Int?
+ usedCount: Int
+}
+class LoyaltyTransaction {
+ orderId: Int?
+ type: LoyaltyType
+ points: Int
+}
+class Topping {
+ id: Int
+ name: String
+ price: Int
+}
+class OrderStatusHistory {
+ fromStatus: OrderStatus?
+ toStatus: OrderStatus
+ createdAt: DateTime
+}
+enum OrderStatus {
+ PENDING
+ PAID
+ PAYMENT_FAILED
+ PREPARING
+ READY
+ COMPLETED
+ CANCELLED
+}
+enum Role {
+ CUSTOMER
+ STAFF
+}
+enum Size {
+ S
+ M
+ L
+}
+enum PaymentMethod {
+ WALLET
+ CARD
+}
+enum PaymentStatus {
+ PROCESSING
+ SUCCEEDED
+ FAILED
+}
+enum DiscountType {
+ PERCENT
+ FIXED
+}
+enum LoyaltyType {
+ EARN
+ REVERT
+}
+User "1" -- "0..*" Order
+Order "1" *-- "1..*" OrderItem
+Product "1" -- "0..*" OrderItem
+Order "1" -- "0..*" Payment
+Promotion "0..1" -- "0..*" Order
+User "1" -- "0..*" LoyaltyTransaction
+Order "1" *-- "1..*" OrderStatusHistory
+Order ..> OrderStatus
+OrderItem ..> Size
+Payment ..> PaymentStatus
+Payment ..> PaymentMethod
+User ..> Role
+Promotion ..> DiscountType
+LoyaltyTransaction ..> LoyaltyType
+OrderItem ..> Topping : JSON snapshot
+note bottom of LoyaltyTransaction
+orderId is a scalar reference in Prisma,
+not a declared relation / foreign key.
+Unique(orderId, type).
+end note
+
+@enduml
