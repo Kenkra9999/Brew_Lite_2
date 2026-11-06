@@ -1,0 +1,194 @@
+// BrewLite - mô hình dữ liệu (Prisma + PostgreSQL)
+// Truy vết: class diagram docs/diagrams/class-domain.puml (Class-01)
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  STAFF
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PAYMENT_FAILED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum Size {
+  S
+  M
+  L
+}
+
+enum PaymentMethod {
+  WALLET
+  CARD
+}
+
+enum PaymentStatus {
+  PROCESSING
+  SUCCEEDED
+  FAILED
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+enum LoyaltyType {
+  EARN
+  REVERT
+}
+
+model User {
+  id                  Int                  @id @default(autoincrement())
+  email               String               @unique
+  passwordHash        String
+  fullName            String
+  role                Role                 @default(CUSTOMER)
+  loyaltyPoints       Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  orders              Order[]
+  loyaltyTransactions LoyaltyTransaction[]
+}
+
+model Product {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String      @default("")
+  category    String
+  /// Giá size S (VND). Size M/L cộng thêm phụ phí cố định.
+  price       Int
+  imageUrl    String
+  /// Số phần còn bán được (tồn kho nguyên liệu quy đổi)
+  stock       Int
+  /// Cột version phục vụ optimistic locking khi trừ tồn kho
+  version     Int         @default(0)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Topping {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique
+  price    Int
+  isActive Boolean @default(true)
+}
+
+model Promotion {
+  id             Int          @id @default(autoincrement())
+  code           String       @unique
+  description    String
+  type           DiscountType
+  /// PERCENT: 1..100 (%) ; FIXED: số tiền VND
+  value          Int
+  minOrderAmount Int          @default(0)
+  maxDiscount    Int?
+  usageLimit     Int?
+  usedCount      Int          @default(0)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  isActive       Boolean      @default(true)
+  orders         Order[]
+}
+
+model Order {
+  id           Int                  @id @default(autoincrement())
+  userId       Int
+  status       OrderStatus          @default(PENDING)
+  subtotal     Int
+  discount     Int                  @default(0)
+  total        Int
+  promotionId  Int?
+  pointsEarned Int                  @default(0)
+  note         String?
+  version      Int                  @default(0)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  user         User                 @relation(fields: [userId], references: [id])
+  promotion    Promotion?           @relation(fields: [promotionId], references: [id])
+  items        OrderItem[]
+  payments     Payment[]
+  history      OrderStatusHistory[]
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model OrderItem {
+  id          Int     @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  /// Ảnh chụp tên sản phẩm tại thời điểm đặt
+  productName String
+  size        Size
+  /// [{ id, name, price }]
+  toppings    Json    @default("[]")
+  qty         Int
+  unitPrice   Int
+  lineTotal   Int
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+}
+
+model Payment {
+  id             Int           @id @default(autoincrement())
+  orderId        Int
+  /// Khóa idempotency do client gửi (header Idempotency-Key) - duy nhất
+  idempotencyKey String        @unique
+  /// SHA-256 của payload để phát hiện dùng lại key với nội dung khác
+  requestHash    String
+  amount         Int
+  method         PaymentMethod
+  status         PaymentStatus @default(PROCESSING)
+  transactionRef String?
+  failureReason  String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  order          Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model LoyaltyTransaction {
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  orderId   Int?
+  type      LoyaltyType
+  points    Int
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id])
+
+  /// Mỗi đơn chỉ được cộng/thu hồi điểm một lần
+  @@unique([orderId, type])
+}
+
+model OrderStatusHistory {
+  id         Int          @id @default(autoincrement())
+  orderId    Int
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  reason     String?
+  createdAt  DateTime     @default(now())
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}

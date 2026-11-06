@@ -1,0 +1,43 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# env & secrets
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# logs
+*.log
+npm-debug.log*
+
+# test artifacts
+tests/test-results/
+tests/playwright-report/
+tests/blob-report/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# tools
+docs/diagrams/.plantuml/
+tools/plantuml.jar
+tools/__pycache__/
+_qa/
+audit-production.json
+report/*.aux
+report/*.toc
+report/*.out
+report/*.log
+report/*.fls
+report/*.fdb_latexmk
+report/*.synctex.gz

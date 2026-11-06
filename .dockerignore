@@ -1,0 +1,14 @@
+node_modules
+**/node_modules
+**/.next
+**/dist
+.git
+.env
+**/.env
+_qa
+tools/plantuml.jar
+report
+**/coverage
+**/test-results
+**/playwright-report
+*.zip
