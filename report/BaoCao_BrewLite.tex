@@ -21,12 +21,16 @@
 \fancyfoot[L]{\small BrewLite Assignment 1 và 2}
 \fancyfoot[R]{\thepage}
 \emergencystretch=3em
-\input{thong-tin.tex}
+\IfFileExists{thong-tin.tex}{
+  \input{thong-tin.tex}\def\AssetDir{assets/}\def\DiagramDir{../docs/diagrams/}
+}{
+  \input{report/thong-tin.tex}\def\AssetDir{report/assets/}\def\DiagramDir{docs/diagrams/}
+}
 \begin{document}
 \begin{titlepage}\centering
 {\large TRƯỜNG ĐẠI HỌC SÀI GÒN\\ KHOA CÔNG NGHỆ THÔNG TIN}\par
 \vspace{1.1cm}
-\includegraphics[width=3cm]{assets/logoITSGU.png}\par
+\includegraphics[width=3cm]{\AssetDir logoITSGU.png}\par
 \vspace{1cm}
 {\Large\bfseries BÁO CÁO BÀI TẬP LỚN}\par
 \vspace{0.4cm}
@@ -301,17 +305,17 @@ Given giỏ Cappuccino M x1 và Trà đào L + trân châu x2, When WALLET thàn
 
 Các sơ đồ sau có nguồn PlantUML và bản SVG/PNG trong docs/diagrams. Sequence mô tả cả transaction tạo đơn và hai transaction thanh toán; state machine phân biệt quyền gateway với thao tác nhân viên. Class diagram thể hiện multiplicity và enum tương ứng Prisma schema.
 
-\clearpage\section{Use case tổng quát}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/usecase-system.png}\captionof{figure}{Use case tổng quát}\end{center}\clearpage
+\clearpage\section{Use case tổng quát}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{\DiagramDir usecase-system.png}\captionof{figure}{Use case tổng quát}\end{center}\clearpage
 
-\clearpage\section{Use case trọng tâm đặt và thanh toán}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/usecase-checkout.png}\captionof{figure}{Use case trọng tâm đặt và thanh toán}\end{center}\clearpage
+\clearpage\section{Use case trọng tâm đặt và thanh toán}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{\DiagramDir usecase-checkout.png}\captionof{figure}{Use case trọng tâm đặt và thanh toán}\end{center}\clearpage
 
-\clearpage\section{Activity đặt và thanh toán với swimlane}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/activity-checkout.png}\captionof{figure}{Activity đặt và thanh toán với swimlane}\end{center}\clearpage
+\clearpage\section{Activity đặt và thanh toán với swimlane}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{\DiagramDir activity-checkout.png}\captionof{figure}{Activity đặt và thanh toán với swimlane}\end{center}\clearpage
 
-\clearpage\section{Sequence đặt và thanh toán idempotent}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/sequence-checkout.png}\captionof{figure}{Sequence đặt và thanh toán idempotent}\end{center}\clearpage
+\clearpage\section{Sequence đặt và thanh toán idempotent}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{\DiagramDir sequence-checkout.png}\captionof{figure}{Sequence đặt và thanh toán idempotent}\end{center}\clearpage
 
-\clearpage\begin{landscape}\section{Class diagram domain và enum}\begin{center}\includegraphics[width=235mm,height=118mm,keepaspectratio]{../docs/diagrams/class-domain.png}\captionof{figure}{Class diagram domain và enum}\end{center}\clearpage\end{landscape}
+\clearpage\begin{landscape}\section{Class diagram domain và enum}\begin{center}\includegraphics[width=235mm,height=118mm,keepaspectratio]{\DiagramDir class-domain.png}\captionof{figure}{Class diagram domain và enum}\end{center}\clearpage\end{landscape}
 
-\clearpage\section{Máy trạng thái đơn hàng}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/state-order.png}\captionof{figure}{Máy trạng thái đơn hàng}\end{center}\clearpage
+\clearpage\section{Máy trạng thái đơn hàng}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{\DiagramDir state-order.png}\captionof{figure}{Máy trạng thái đơn hàng}\end{center}\clearpage
 
 \chapter{Thiết kế kiến trúc}
 
@@ -426,7 +430,7 @@ GHCR tag SHA, VPS Compose + Caddy, migration trước service, smoke sau deploy,
 Được truy vết trong architecture.md, schema/\allowbreak{}mã nguồn và sơ đồ; thay đổi quyết định phải bổ sung ADR thay thế thay vì sửa lịch sử.
 
 
-\clearpage\section{Deployment diagram}\begin{figure}[ht]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{../docs/diagrams/deployment.png}\caption{Local và CI cùng topology VPS production được chuẩn bị. Chưa gắn host production thật.}\end{figure}\clearpage
+\clearpage\section{Deployment diagram}\begin{figure}[ht]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{\DiagramDir deployment.png}\caption{Local và CI cùng topology VPS production được chuẩn bị. Chưa gắn host production thật.}\end{figure}\clearpage
 
 \chapter{Quản lý Agile Scrum}
 
@@ -544,13 +548,13 @@ Các thao tác hủy/thay đổi state khóa cùng dòng Order. Không hủy tro
 UI giữ orderId và key trong sessionStorage khi chưa rõ kết quả thanh toán, giữ giỏ nếu thất bại và thử lại trên cùng order. Pending được xóa phù hợp khi đổi tài khoản; hủy một đơn khác không được xóa nhầm pending. Nếu kết quả tạo đơn không rõ, UI yêu cầu xem lịch sử và không tự động gửi POST tạo đơn lần nữa. API tạo đơn chưa có idempotency riêng; process crash giữa claim và finalize cần reconciliation trước khi tích hợp cổng thật.
 
 
-\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{assets/menu-desktop.png}\caption{Giao diện thực đơn trên desktop}\end{figure}\clearpage
+\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{\AssetDir menu-desktop.png}\caption{Giao diện thực đơn trên desktop}\end{figure}\clearpage
 
-\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{assets/menu-mobile.png}\caption{Giao diện thực đơn trên điện thoại}\end{figure}\clearpage
+\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{\AssetDir menu-mobile.png}\caption{Giao diện thực đơn trên điện thoại}\end{figure}\clearpage
 
-\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{assets/checkout.png}\caption{Giao diện thanh toán mô phỏng}\end{figure}\clearpage
+\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{\AssetDir checkout.png}\caption{Giao diện thanh toán mô phỏng}\end{figure}\clearpage
 
-\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{assets/confirmation.png}\caption{Xác nhận đơn hàng thực tế}\end{figure}\clearpage
+\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{\AssetDir confirmation.png}\caption{Xác nhận đơn hàng thực tế}\end{figure}\clearpage
 
 \chapter{Kiểm thử và bằng chứng}
 

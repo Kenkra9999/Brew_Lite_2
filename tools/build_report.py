@@ -99,12 +99,16 @@ preamble=r'''\documentclass[a4paper,12pt,oneside]{report}
 \fancyfoot[L]{\small BrewLite Assignment 1 và 2}
 \fancyfoot[R]{\thepage}
 \emergencystretch=3em
-\input{thong-tin.tex}
+\IfFileExists{thong-tin.tex}{
+  \input{thong-tin.tex}\def\AssetDir{assets/}\def\DiagramDir{../docs/diagrams/}
+}{
+  \input{report/thong-tin.tex}\def\AssetDir{report/assets/}\def\DiagramDir{docs/diagrams/}
+}
 \begin{document}
 \begin{titlepage}\centering
 {\large TRƯỜNG ĐẠI HỌC SÀI GÒN\\ KHOA CÔNG NGHỆ THÔNG TIN}\par
 \vspace{1.1cm}
-\includegraphics[width=3cm]{assets/logoITSGU.png}\par
+\includegraphics[width=3cm]{\AssetDir logoITSGU.png}\par
 \vspace{1cm}
 {\Large\bfseries BÁO CÁO BÀI TẬP LỚN}\par
 \vspace{0.4cm}
@@ -154,11 +158,11 @@ figs=[('usecase-system','Use case tổng quát'),('usecase-checkout','Use case t
 for name,title in figs:
     p=ROOT/f'docs/diagrams/{name}.png'; w,h=Image.open(p).size
     landscape=w/h>1.4
-    body.append(r'\clearpage'+(r'\begin{landscape}' if landscape else '')+r'\section{'+title+'}'+r'\begin{center}\includegraphics[width='+('235mm' if landscape else '160mm')+',height='+('118mm' if landscape else '180mm')+r',keepaspectratio]{../docs/diagrams/'+name+r'.png}\captionof{figure}{'+title+r'}\end{center}\clearpage'+(r'\end{landscape}' if landscape else ''))
+    body.append(r'\clearpage'+(r'\begin{landscape}' if landscape else '')+r'\section{'+title+'}'+r'\begin{center}\includegraphics[width='+('235mm' if landscape else '160mm')+',height='+('118mm' if landscape else '180mm')+r',keepaspectratio]{\DiagramDir '+name+r'.png}\captionof{figure}{'+title+r'}\end{center}\clearpage'+(r'\end{landscape}' if landscape else ''))
 
 chapter('Thiết kế kiến trúc',['docs/architecture/architecture.md'])
 for p in sorted((ROOT/'docs/architecture/adr').glob('*.md')):body.append(md(p.relative_to(ROOT)))
-body.append(r'\clearpage\section{Deployment diagram}\begin{figure}[ht]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{../docs/diagrams/deployment.png}\caption{Local và CI cùng topology VPS production được chuẩn bị. Chưa gắn host production thật.}\end{figure}\clearpage')
+body.append(r'\clearpage\section{Deployment diagram}\begin{figure}[ht]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{\DiagramDir deployment.png}\caption{Local và CI cùng topology VPS production được chuẩn bị. Chưa gắn host production thật.}\end{figure}\clearpage')
 chapter('Quản lý Agile Scrum',['docs/scrum/product-backlog.md','docs/scrum/sprints.md','docs/scrum/review-retrospective.md'])
 body.append(r'''\chapter{Hiện thực phần mềm}
 \section{Frontend Next.js}
@@ -181,7 +185,7 @@ UI giữ orderId và key trong sessionStorage khi chưa rõ kết quả thanh to
 screens=[('menu-desktop','Giao diện thực đơn trên desktop'),('menu-mobile','Giao diện thực đơn trên điện thoại'),('checkout','Giao diện thanh toán mô phỏng'),('confirmation','Xác nhận đơn hàng thực tế')]
 for name,title in screens:
     if (OUT/f'assets/{name}.png').exists():
-        body.append(r'\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{assets/'+name+r'.png}\caption{'+title+r'}\end{figure}\clearpage')
+        body.append(r'\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{\AssetDir '+name+r'.png}\caption{'+title+r'}\end{figure}\clearpage')
 chapter('Kiểm thử và bằng chứng',['docs/quality/verification.md'])
 perf=ROOT/'docs/quality/performance.json'
 if perf.exists():
