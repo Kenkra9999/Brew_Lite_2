@@ -26,14 +26,11 @@ cloud "GHCR registry" as Registry
 node "Production VPS (configured, not yet provisioned)" as Prod {
 artifact "Caddy :80/:443" as TLS
 artifact "Next.js web :3000" as Web
-artifact "NestJS API :3001
-/health + stdout logs" as API
-database "PostgreSQL :5432
-private network only" as DB
+artifact "NestJS API :3001\n/health + stdout logs" as API
+database "PostgreSQL :5432\nprivate network only" as DB
 storage "persistent volume + backup" as Volume
 artifact "Mock payment module" as Pay
-artifact "Environment secrets
-JWT_SECRET / DATABASE_URL" as Secrets
+artifact "Environment secrets\nJWT_SECRET / DATABASE_URL" as Secrets
 TLS --> Web : internal HTTP
 TLS --> API : /backend/* internal HTTP
 Web --> API : /api/* internal HTTP
