@@ -1,24 +1,25 @@
 # Bằng chứng kiểm chứng
 
-Ngày kiểm tra: 06/11/2026, Windows 11, Node 22, PostgreSQL 17 Docker. Dự án được tiếp quản từ backend Claude Code trong `brewlite`, hoàn thiện riêng, không ghi đè bản đó. Claude Code đã rà soát read-only payment/order/checkout/cart; các lỗi pending và số lượng được sửa. Giới hạn crash recovery của mock được ghi trong SRS/ADR, không tự gọi lại gateway sau crash vì cache mock chỉ ở RAM.
+Ngày kiểm tra: 06/11/2026, Windows 11, Node 24.16.0 local, Node 22 trong Docker/CI, PostgreSQL 17 Docker. Dự án được tiếp quản từ backend Claude Code trong `brewlite`, hoàn thiện riêng, không ghi đè bản đó. Claude Code đã rà soát read-only payment/order/checkout/cart; các lỗi pending và số lượng được sửa. Giới hạn crash recovery của mock được ghi trong SRS/ADR, không tự gọi lại gateway sau crash vì cache mock chỉ ở RAM.
 
 | Kiểm tra | Kết quả quan sát |
 |---|---|
 | Unit backend | 50 tests / 6 suites pass |
-| Unit/component web | Cập nhật sau lần kiểm chứng cuối |
+| Unit/component web | 8 tests / 2 files pass (cart + menu component) |
 | Integration PostgreSQL | 31 tests / 4 suites pass; database riêng brewlite_test |
 | Đồng thời kho | 20 requests, stock 5: đúng 5 thành công; thêm qty=2 không âm kho |
 | Đồng thời thanh toán | 10 cùng key: cùng payment, đúng một charge; hai key/đơn không charge hai lần |
 | Docker | Web/API/DB build và cả ba healthy trên localhost |
-| Typecheck/lint/build | Cập nhật sau lần kiểm chứng cuối |
-| E2E desktop/mobile | Cập nhật sau lần kiểm chứng cuối |
+| Typecheck/lint/build | Đạt trên local và Docker build; GitHub CI chạy độc lập |
+| E2E desktop/mobile | 6 tests pass: 3 tình huống × desktop và mobile; success, decline/retry, resume/cancel pending |
 | HTTPS production | Chưa có host/domain và deploy secrets; chưa thực hiện |
 
 ## CI và pull request thật
 - Repository: https://github.com/Kenkra9999/brewlite2
 - PR: https://github.com/Kenkra9999/brewlite2/pull/1
 - Run phát hiện lỗi: https://github.com/Kenkra9999/brewlite2/actions/runs/42236429957 — typecheck bắt `exact` không thuộc ByRoleOptions trong component test. Pipeline dừng, build/E2E không chạy tiếp. Đây là failure thật đã được sửa, không phải ảnh dựng.
-- Run thành công và merge gate: bổ sung sau khi kiểm tra xong trên GitHub.
+- Run thành công: https://github.com/Kenkra9999/brewlite2/actions/runs/42238619259 — lint, typecheck, 50 backend unit, 8 web unit/component, 31 integration, build và 6 E2E desktop/mobile đều xanh.
+- GitHub main đã bật required check `quality`, strict up-to-date, enforce admins và linear history ngày 06/11/2026. PR phải xanh mới merge; không chỉ có YAML.
 
 ## Giới hạn và bước kiểm tra bổ sung
 Thanh toán chỉ mô phỏng; chưa có reconciliation cho PROCESSING sau process crash; POST /orders chưa idempotent; đơn treo chưa có TTL. JWT ở sessionStorage, chưa có HttpOnly cookie. Dependency audit còn advisory ở bộ phiên bản kế thừa; cần nâng dependency có kiểm thử trước vận hành thật. Các test tự động không chứng minh SLA, không thay nghiệm thu khách hàng hoặc pentest. Chưa tuyên bố đáp ứng production khi mới có Compose và workflow.

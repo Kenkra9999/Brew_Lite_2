@@ -65,7 +65,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
   deploy:
-    if: inputs.deploy == true || startsWith(github.ref, 'refs/tags/')
+    if: inputs.deploy == true || (startsWith(github.ref, 'refs/tags/') && vars.PRODUCTION_ENABLED == 'true')
     needs: images
     runs-on: ubuntu-latest
     environment: production

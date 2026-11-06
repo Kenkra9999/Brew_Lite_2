@@ -8,7 +8,7 @@ Local được chạy qua Compose để kiểm chứng. Production được chu�
 2. Tạo `/opt/brewlite/deploy`, copy compose production và Caddyfile. Copy `.env.production.example` thành `/opt/brewlite/.env`, chmod 600 và điền DOMAIN, IMAGE_PREFIX, POSTGRES_PASSWORD, DATABASE_URL, JWT_SECRET. Password trong URL cần URL encode; ví dụ chỉ dùng ký tự URL-safe.
 3. Dùng image GHCR có tag full SHA. Package private cần login GHCR trên VPS bằng token chỉ read:packages; không lưu token vào repo/log.
 4. Tạo GitHub Environment `production`; secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`. Known hosts được xác minh từ chủ VPS; không tắt StrictHostKeyChecking. Tài khoản deploy có quyền Docker (tương đương root trên host), cần máy riêng cho bài.
-5. Workflow Delivery chạy quality gate → build images → push GHCR → SSH deploy → migrate → up --wait → HTTPS smoke. Chạy thủ công deploy=false để chỉ xuất image, deploy=true khi host đã cấu hình. Tag `v*` thực hiện deploy và yêu cầu các secrets này.
+5. Workflow Delivery chạy quality gate → build images → push GHCR → SSH deploy → migrate → up --wait → HTTPS smoke. Chạy thủ công deploy=false để chỉ xuất image, deploy=true khi host đã cấu hình. Tag `v*` xuất image; tự deploy khi repository variable `PRODUCTION_ENABLED=true`. Manual deploy=true luôn yêu cầu secrets. Khi chưa có host, job deploy được skip rõ ràng, không coi là đã lên production.
 
 ## Migration và dữ liệu
 `prisma migrate deploy` chạy một lần trước đổi dịch vụ; API production không tự seed hoặc chạy migration mỗi replica. Seed chỉ dùng local/demo. Trước thay đổi schema phá hủy, backup bằng pg_dump và diễn tập restore. Dùng migration expand/contract tương thích cả image trước và image mới.

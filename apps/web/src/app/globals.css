@@ -6,7 +6,7 @@
   --orange: #d97445;
   --muted: #778076;
   --line: #e0e3da;
-  --serif: Georgia, "Times New Roman", serif;
+  --serif: "Times New Roman", Georgia, serif;
 }
 * {
   box-sizing: border-box;

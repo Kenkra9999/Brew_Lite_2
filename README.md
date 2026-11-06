@@ -94,3 +94,5 @@ Nhánh `main` ổn định; nhánh `feat/*`, `fix/*`, `docs/*` làm việc; PR c
 
 ## Production
 Chưa cung cấp URL production khi chưa có host/domain. Đã chuẩn bị VPS + Caddy HTTPS và workflow Delivery. Không dùng localhost làm minh chứng production. Các bước và secret cần thiết ở `docs/deployment.md`; trạng thái thực được cập nhật ở `docs/quality/verification.md`.
+
+Video demo không lồng tiếng: [BrewLite Demo](demo/BrewLite_Demo.webm). Issue backlog thật: [GitHub Backlog](docs/scrum/github-backlog.md).

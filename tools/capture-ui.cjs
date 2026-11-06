@@ -1,0 +1,36 @@
+const { chromium }=require('@playwright/test');
+const fs=require('node:fs');
+(async()=>{
+  fs.mkdirSync('report/assets',{recursive:true});
+  const browser=await chromium.launch();
+  fs.mkdirSync('demo',{recursive:true});
+  const context=await browser.newContext({viewport:{width:1440,height:1100},recordVideo:{dir:'demo',size:{width:1280,height:900}}});
+  const page=await context.newPage();
+  await page.goto('http://localhost:3000');
+  await page.getByRole('heading',{name:'Cappuccino',exact:true}).waitFor();
+  await page.locator('.product-card').last().scrollIntoViewIfNeeded();
+  await page.waitForFunction(()=>Array.from(document.querySelectorAll('.product-picture img')).every(img=>img.complete&&img.naturalWidth>0));
+  await page.evaluate(()=>window.scrollTo(0,0));
+  await page.screenshot({path:'report/assets/menu-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  await page.evaluate(()=>window.scrollTo({top:document.getElementById('menu').offsetTop-135,behavior:'instant'}));
+  await page.screenshot({path:'report/assets/menu-mobile.png'});
+  await page.setViewportSize({width:1280,height:1000});
+  await page.getByRole('heading',{name:'Cappuccino',exact:true}).click();
+  await page.getByRole('radio',{name:/M/}).check();
+  await page.getByRole('button',{name:/Thêm vào giỏ/}).click();
+  await page.goto('http://localhost:3000/auth?next=/checkout');
+  await page.getByLabel('Email',{exact:true}).fill('demo@brewlite.vn');
+  await page.getByLabel('Mật khẩu',{exact:true}).fill('Demo@1234');
+  await page.getByRole('button',{name:'Đăng nhập →'}).click();
+  await page.getByRole('heading',{name:'Thanh toán',exact:true}).waitFor();
+  await page.screenshot({path:'report/assets/checkout.png',fullPage:true});
+  await page.getByRole('button',{name:'Xác nhận thanh toán →'}).click();
+  await page.getByRole('heading',{name:'Cảm ơn bạn đã đặt hàng!'}).waitFor();
+  await page.screenshot({path:'report/assets/confirmation.png',fullPage:true});
+  const video=page.video();
+  await context.close();
+  if(video){await video.saveAs('demo/BrewLite_Demo.webm');await video.delete();}
+  await browser.close();
+  console.log('Captured actual application screens');
+})().catch(e=>{console.error(e);process.exit(1);});

@@ -1,0 +1,806 @@
+\documentclass[a4paper,12pt,oneside]{report}
+\usepackage{fontspec}
+\IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{\setmainfont{TeX Gyre Termes}}
+\IfFontExistsTF{Arial}{\setsansfont{Arial}}{\setsansfont{TeX Gyre Heros}}
+\IfFontExistsTF{Consolas}{\setmonofont{Consolas}[Scale=0.85]}{\setmonofont{Latin Modern Mono}[Scale=0.85]}
+\usepackage[left=28mm,right=22mm,top=25mm,bottom=25mm,headheight=18pt]{geometry}
+\usepackage{graphicx,array,longtable,booktabs,setspace,fancyhdr,pdflscape,xcolor,caption}
+\usepackage[unicode,breaklinks=true,colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
+\urlstyle{same}
+\setstretch{1.18}
+\setlength{\parskip}{5pt}
+\setlength{\parindent}{0pt}
+\setcounter{tocdepth}{1}
+\renewcommand{\contentsname}{Mục lục}
+\renewcommand{\chaptername}{Chương}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\tablename}{Bảng}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small Trường Đại học Sài Gòn}
+\fancyhead[R]{\small Công nghệ Phần mềm}
+\fancyfoot[L]{\small BrewLite Assignment 1 và 2}
+\fancyfoot[R]{\thepage}
+\emergencystretch=3em
+\input{thong-tin.tex}
+\begin{document}
+\begin{titlepage}\centering
+{\large TRƯỜNG ĐẠI HỌC SÀI GÒN\\ KHOA CÔNG NGHỆ THÔNG TIN}\par
+\vspace{1.1cm}
+\includegraphics[width=3cm]{assets/logoITSGU.png}\par
+\vspace{1cm}
+{\Large\bfseries BÁO CÁO BÀI TẬP LỚN}\par
+\vspace{0.4cm}
+{\Large CÔNG NGHỆ PHẦN MỀM}\par
+\vspace{1.0cm}
+{\Huge\bfseries BrewLite}\par
+\vspace{0.4cm}
+{\Large Ứng dụng đặt cà phê không dùng tiền mặt}\par
+\vspace{0.5cm}
+{\large Assignment 1 và Assignment 2}\par
+{\large Từ yêu cầu đến triển khai}\par
+\vspace{1.1cm}
+\begin{tabular}{rl}
+Giảng viên hướng dẫn & \GiangVien\\[0.3cm]
+Nhóm & \TenNhom\\[0.3cm]
+Lớp & \LopHoc
+\end{tabular}\par
+\vspace{0.7cm}
+{\large Thành viên và mã số sinh viên}\par\vspace{0.35cm}
+\ThanhVien\par
+\vfill
+{Học kỳ I năm học 2026–2027}\par
+{TP. Hồ Chí Minh, tháng 11 năm 2026}
+\end{titlepage}
+\pagenumbering{roman}\tableofcontents\clearpage
+\pagenumbering{arabic}
+\chapter{Giới thiệu đề tài}
+BrewLite giải quyết luồng chọn đồ uống, tùy chỉnh, đặt và thanh toán không dùng tiền mặt tại một cửa hàng cà phê. Sản phẩm sử dụng Next.js cho giao diện mobile first, NestJS cho REST API, PostgreSQL và Prisma cho dữ liệu. Thanh toán Ví và Thẻ là mô phỏng theo phạm vi đề bài.
+
+Báo cáo kết hợp 10 task của Assignment 1 và 5 task tuần tự của Assignment 2. Nội dung trình bày phạm vi, yêu cầu có tiêu chí chấp nhận, mô hình UML, kiến trúc và ADR, kế hoạch Scrum, hiện thực, kiểm thử và bàn giao. Các link GitHub và kết quả kiểm thử là bằng chứng có thể kiểm tra; mục triển khai production chỉ được nghiệm thu sau khi có URL HTTPS hoạt động.
+
+Nguồn backend ban đầu được kế thừa từ phiên làm việc Claude Code. Codex hoàn thiện trên thư mục riêng, bổ sung frontend, sửa lỗi đồng thời, tài liệu và kiểm thử; Claude Code rà soát độc lập một số luồng quan trọng. Nhóm sinh viên cần xác nhận thông tin bìa, phân công và nghiệm thu trước khi nộp.
+
+\section{Liên kết sản phẩm}
+Repository: \url{https://github.com/Kenkra9999/brewlite2}. Pull request hoàn thiện: \url{https://github.com/Kenkra9999/brewlite2/pull/1}. Báo cáo và tài liệu nguồn nằm cùng repository để truy vết thay đổi.
+
+
+\chapter{Khai thác và đặc tả yêu cầu}
+
+\section{Bối cảnh và phạm vi BrewLite}
+
+Môn Công nghệ Phần mềm, Đại học Sài Gòn, HK I 2026–2027. Nguồn yêu cầu: {\small\ttfamily BrewLite-\allowbreak{}CongNghePhanMem.\allowbreak{}pdf} (Assignment 1, 10 task) và {\small\ttfamily Assignment2-\allowbreak{}BrewLite.\allowbreak{}pdf} (Assignment 2, 5 task). Hai tài liệu được kết hợp trên cùng sản phẩm, không thay thế Next.js, NestJS hoặc PostgreSQL.
+
+
+\subsection{Vấn đề và mục tiêu}
+Khách phải chờ chọn đồ uống và trả tiền tại quầy. BrewLite cho phép xem menu, chọn size/\allowbreak{}topping, đặt và trả tiền mô phỏng trước, nhận mã đơn và theo dõi quá trình pha chế. Thành công của MVP là hoàn tất luồng này với dữ liệu lưu thật, giá tính ở server, không thu tiền lặp và không âm tồn kho.
+
+
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.14\linewidth} >{\raggedright\arraybackslash}p{0.36\linewidth} >{\raggedright\arraybackslash}p{0.44\linewidth}@{}}
+\toprule
+\textbf{Stakeholder} & \textbf{Mục tiêu} & \textbf{Tiêu chí quan tâm} \\
+\midrule\endhead
+Khách hàng & Đặt nhanh, biết giá và tình trạng đơn & Giỏ rõ ràng, thử lại an toàn, chỉ xem đơn mình \\
+\addlinespace[2pt]
+Nhân viên quầy & Biết đơn đã trả tiền, cập nhật pha chế & Role STAFF và chuyển trạng thái hợp lệ \\
+\addlinespace[2pt]
+Quản lý cửa hàng /\allowbreak{} PO & Ưu tiên phạm vi, kiểm soát bán hàng & Menu, kho, mã giảm giá và demo nghiệm thu \\
+\addlinespace[2pt]
+Giảng viên /\allowbreak{} khách hàng nghiệm thu & Đánh giá quy trình và sản phẩm & Yêu cầu, UML, test, Git, CI/\allowbreak{}CD, URL hoạt động \\
+\addlinespace[2pt]
+Nhóm phát triển & Tái tạo và bảo trì hệ thống & Migration, seed, Docker, test và ADR \\
+\addlinespace[2pt]
+Đơn vị thanh toán mô phỏng & Trả kết quả thanh toán có thể kiểm chứng & Một kết quả cho mỗi Idempotency-Key \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{In scope}
+Menu có hình/\allowbreak{}giá; chi tiết; size S/\allowbreak{}M/\allowbreak{}L; topping; giỏ có lưu trên trình duyệt; đăng ký/\allowbreak{}đăng nhập JWT; đơn PENDING; thanh toán WALLET/\allowbreak{}CARD giả lập; xác nhận, lịch sử và theo dõi; khuyến mãi; điểm thưởng; optimistic locking tồn kho; idempotency; bàn nhân viên cập nhật trạng thái; Docker, CI, cấu hình CD, tài liệu và kiểm thử. Quầy nhân viên là phần mở rộng của Assignment 1 để minh họa state machine và đáp ứng quản lý trạng thái của Assignment 2.
+
+
+\subsection{Out of scope}
+Thu tiền thật, giao hàng, nhiều chi nhánh, hoàn tiền ngân hàng thật, quản lý công thức nguyên liệu, hóa đơn thuế, loyalty đổi điểm, đăng nhập mạng xã hội. Không lưu số thẻ. Tồn kho được mô hình hóa bằng số phần đồ uống còn bán được, không phải gram nguyên liệu.
+
+
+\subsection{Giả định và ràng buộc}
+\begin{itemize}
+\item Một cửa hàng, đơn vị tiền VND nguyên, không có phí giao hàng hay thuế cộng thêm.
+\item Size S giá gốc, M +5.000, L +10.000. Topping tính theo từng ly, tối đa 4 loại; mỗi dòng 1–20 ly, mỗi đơn tối đa 20 dòng.
+\item Kho được giữ khi tạo PENDING; PAYMENT\_FAILED giữ kho để thử lại; hủy hợp lệ hoàn kho và lượt mã đúng một lần. Chưa có tác vụ tự hết hạn đơn treo.
+\item WALLET giả lập có hạn mức 2 triệu/\allowbreak{}giao dịch; CARD chỉ dùng số thử nghiệm. PAID cộng floor(total/\allowbreak{}10.000) điểm một lần.
+\item Công nghệ bắt buộc Next.js + NestJS + PostgreSQL; dùng Prisma migration; Node 22 và Docker Compose v2.
+\item Dữ liệu demo và tài khoản demo chỉ phục vụ chấm bài; production thật phải bỏ tài khoản demo và cấu hình secret riêng.
+\item Các bằng chứng CI, production và buổi Scrum chỉ được ghi nhận khi thực sự có; không coi cấu hình pipeline là một lần deploy thành công.
+\end{itemize}
+
+\subsection{Rủi ro ban đầu}
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.14\linewidth} >{\raggedright\arraybackslash}p{0.36\linewidth} >{\raggedright\arraybackslash}p{0.44\linewidth}@{}}
+\toprule
+\textbf{Rủi ro} & \textbf{Tác động} & \textbf{Biện pháp} \\
+\midrule\endhead
+Hai khách mua phần cuối & Bán quá kho & Transaction, version, điều kiện stock >= qty, retry và test đồng thời \\
+\addlinespace[2pt]
+Client lặp thanh toán & Thu tiền/\allowbreak{}điểm lặp & Unique key, khóa dòng Order, hash request, replay \\
+\addlinespace[2pt]
+Mạng mất sau khi trả tiền & Khách không biết kết quả & Giữ key và orderId trên phiên, tải lại đơn, retry cùng key \\
+\addlinespace[2pt]
+API chết giữa hai transaction thanh toán & Payment kẹt PROCESSING & Health/\allowbreak{}log; ghi rõ giới hạn mock, cần reconciliation/\allowbreak{}outbox trước thanh toán thật \\
+\addlinespace[2pt]
+Không có tài khoản hosting/\allowbreak{}domain & Không nghiệm thu production A2 Task 5.4 & Chuẩn bị Compose production + CD + runbook, ghi trạng thái thật và chờ môi trường \\
+\addlinespace[2pt]
+Thiếu thông tin thành viên & Bìa chưa định danh & Để trống, không tạo tên/\allowbreak{}MSSV giả \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\section{Đặc tả yêu cầu phần mềm BrewLite}
+
+\subsection{Phạm vi và thuật ngữ}
+Đặc tả này kết hợp Assignment 1 và 2. Must là bắt buộc MVP, Should ưu tiên kế tiếp, Could ở backlog, Won’t ngoài phiên bản. PAID là kết quả mock, không phải tiền thật. Xem {\small\ttfamily context-\allowbreak{}and-\allowbreak{}scope.\allowbreak{}md} để hiểu giả định kho và giới hạn thanh toán.
+
+
+\subsection{Yêu cầu chức năng}
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.12\linewidth} >{\raggedright\arraybackslash}p{0.18\linewidth} >{\raggedright\arraybackslash}p{0.12\linewidth} >{\raggedright\arraybackslash}p{0.5\linewidth}@{}}
+\toprule
+\textbf{ID} & \textbf{Yêu cầu} & \textbf{MoSCoW} & \textbf{Tiêu chí chấp nhận} \\
+\midrule\endhead
+FR-01 & Xem menu & Must & GET /\allowbreak{}products trả mảng id, name, price, imageUrl, stock; UI có loading, empty, error. \\
+\addlinespace[2pt]
+FR-02 & Xem chi tiết & Must & GET /\allowbreak{}products/\allowbreak{}:id trả chi tiết, sizes, toppings; id không tồn tại trả 404. \\
+\addlinespace[2pt]
+FR-03 & Chọn tùy chọn & Must & S/\allowbreak{}M/\allowbreak{}L và tối đa 4 topping; UI cập nhật giá, API tự tính giá từ DB. \\
+\addlinespace[2pt]
+FR-04 & Sửa giỏ & Must & Thêm, sửa qty 1–20, xóa; badge và tổng thay đổi đúng, tách dòng theo size/\allowbreak{}topping. \\
+\addlinespace[2pt]
+FR-05 & Lưu giỏ & Should & Reload còn giỏ, thanh toán lỗi giữ nguyên giỏ; thành công xóa giỏ. \\
+\addlinespace[2pt]
+FR-06 & Hiển thị tổng & Must & subtotal là tổng unitPrice*qty; discount không vượt subtotal; total=subtotal-discount. \\
+\addlinespace[2pt]
+FR-07 & Đăng ký & Must & Email duy nhất, password có chữ và số >=8 ký tự, lưu bcrypt hash, trả JWT. \\
+\addlinespace[2pt]
+FR-08 & Đăng nhập & Must & Đúng tài khoản trả JWT; sai trả 401, không tiết lộ email tồn tại. \\
+\addlinespace[2pt]
+FR-09 & Phân quyền & Must & Thiếu/\allowbreak{}sai JWT không đặt đơn; khách không đọc đơn người khác; chỉ STAFF đổi trạng thái. \\
+\addlinespace[2pt]
+FR-10 & Validate & Must & Client có ràng buộc form; API từ chối size sai, qty sai, giỏ trống và giá client gửi. \\
+\addlinespace[2pt]
+FR-11 & Khuyến mãi & Should & WELCOME10 giảm 10\% từ 50k, tối đa 20k; GIAM15K giảm 15k từ 100k; mã sai/\allowbreak{}hết hạn bị chặn. \\
+\addlinespace[2pt]
+FR-12 & Tạo đơn & Must & POST /\allowbreak{}orders tạo đúng một đơn PENDING cho một lần gọi hợp lệ và snapshot tên/\allowbreak{}giá trong transaction. \\
+\addlinespace[2pt]
+FR-13 & Thanh toán & Must & POST /\allowbreak{}payments hỗ trợ WALLET/\allowbreak{}CARD mock; thành công Payment SUCCEEDED và Order PAID. \\
+\addlinespace[2pt]
+FR-14 & Lỗi và thử lại & Must & Thẻ 4000000000000002 bị từ chối, Order PAYMENT\_FAILED; thử lại mới dùng key mới trên cùng đơn. \\
+\addlinespace[2pt]
+FR-15 & Xác nhận và theo dõi & Must & Hiển thị code, status, tổng, item và lịch sử trạng thái sau thanh toán; polling không cache API. \\
+\addlinespace[2pt]
+FR-16 & Lịch sử đơn & Must & GET /\allowbreak{}orders/\allowbreak{}me trả tối đa 50 đơn của người hiện tại, mới nhất trước. \\
+\addlinespace[2pt]
+FR-17 & State machine & Must & Chỉ cho PENDING→PAID→PREPARING→READY→COMPLETED và các nhánh lỗi/\allowbreak{}hủy đã định nghĩa; sai trả 409. \\
+\addlinespace[2pt]
+FR-18 & Kho đồng thời & Must & 20 yêu cầu đồng thời mua sản phẩm còn 5 phần: đúng 5 đơn, kho 0, không âm. \\
+\addlinespace[2pt]
+FR-19 & Loyalty & Should & Chỉ cộng floor(total/\allowbreak{}10000) sau PAID; replay không cộng lần hai; STAFF hủy PAID thu hồi điểm. \\
+\addlinespace[2pt]
+FR-20 & Hủy đơn & Should & Khách hủy PENDING/\allowbreak{}PAYMENT\_FAILED; chặn khi thanh toán đang chạy; hoàn kho/\allowbreak{}lượt mã đúng một lần. \\
+\addlinespace[2pt]
+FR-21 & Idempotency & Must & Cùng key + cùng user/\allowbreak{}order/\allowbreak{}method trả cùng payment; khác payload trả 422; đồng thời không charge hai lần. \\
+\addlinespace[2pt]
+FR-22 & Thanh toán thật & Won’t & Không kết nối ngân hàng hoặc yêu cầu thẻ thật trong phiên bản này. \\
+\addlinespace[2pt]
+FR-23 & Thông báo đẩy & Could & Để backlog sau MVP; hiện dùng polling. \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{Yêu cầu phi chức năng}
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.12\linewidth} >{\raggedright\arraybackslash}p{0.18\linewidth} >{\raggedright\arraybackslash}p{0.12\linewidth} >{\raggedright\arraybackslash}p{0.5\linewidth}@{}}
+\toprule
+\textbf{ID} & \textbf{Nhóm} & \textbf{MoSCoW} & \textbf{Tiêu chí chấp nhận} \\
+\midrule\endhead
+NFR-01 & Hiệu năng & Should & GET /\allowbreak{}products: p95 <500ms với seed 8 món, 100 request tuần tự trên máy đo đã ghi cấu hình; không áp cho gateway giả lập. \\
+\addlinespace[2pt]
+NFR-02 & Bảo mật & Must & bcrypt, JWT, validate, phân quyền; không log password/\allowbreak{}token/\allowbreak{}card, DB không public trong Compose production. \\
+\addlinespace[2pt]
+NFR-03 & Tính khả dụng & Must & /\allowbreak{}health kiểm tra DB; lỗi API hiển thị nút thử lại; Compose đợi health và restart dịch vụ. \\
+\addlinespace[2pt]
+NFR-04 & Tương thích & Must & Hoàn tất đặt đơn ở Chromium desktop và viewport 390x844; không tràn ngang. \\
+\addlinespace[2pt]
+NFR-05 & Tái lập & Must & npm ci, migration/\allowbreak{}seed và docker compose up --build tái tạo được ba dịch vụ từ README. \\
+\addlinespace[2pt]
+NFR-06 & Quality gate & Must & PR chạy lint, unit, integration, E2E và build; branch protection được cấu hình trước nghiệm thu merge gate. \\
+\addlinespace[2pt]
+NFR-07 & Triển khai & Must & HTTPS frontend/\allowbreak{}API, image tag SHA, health smoke, migration và rollback có tài liệu; nghiệm thu chỉ khi URL thực hoạt động. \\
+\addlinespace[2pt]
+NFR-08 & Truy cập & Should & Nhãn form, focus rõ, trạng thái lỗi role=alert, không truyền trạng thái chỉ bằng màu. \\
+\addlinespace[2pt]
+NFR-09 & PWA & Should & Manifest và service worker; shell offline thông báo không có mạng; API và thanh toán không cache. \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{Use case tổng quát}
+Nguồn và bản kết xuất: {\small\ttfamily .\allowbreak{}.\allowbreak{}/\allowbreak{}diagrams/\allowbreak{}usecase-\allowbreak{}system.\allowbreak{}puml} và {\small\ttfamily .\allowbreak{}svg}. UC-01 xem menu/\allowbreak{}chi tiết; UC-02 quản lý giỏ; UC-03 xác thực; UC-04 đặt và thanh toán; UC-05 lịch sử/\allowbreak{}theo dõi; UC-06 cập nhật đơn (STAFF). Use case trọng tâm trong {\small\ttfamily use-\allowbreak{}case-\allowbreak{}checkout.\allowbreak{}md}.
+
+
+\subsection{Quy tắc nghiệp vụ}
+BR-01: tiền nguyên VND, server là nguồn giá chính thức. BR-02: kho trừ khi PENDING và hoàn khi CANCELLED. BR-03: một payment cho một idempotency key, nhiều lần thử trên cùng đơn được phép nếu lần trước FAILED. BR-04: chỉ gateway tạo PAID/\allowbreak{}PAYMENT\_FAILED. BR-05: điểm thưởng và thay đổi trạng thái thanh toán nằm cùng transaction. BR-06: số thẻ chỉ ở request tới mock gateway, không lưu DB, localStorage hay log. BR-07: đơn PAID hủy tại quầy chỉ là hoàn tiền mô phỏng; chưa có ledger refund thật.
+
+
+\section{UC 04 Đặt và thanh toán đơn hàng}
+
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.25\linewidth} >{\raggedright\arraybackslash}p{0.71\linewidth}@{}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Nội dung} \\
+\midrule\endhead
+Actor chính & Khách hàng đã có giỏ \\
+\addlinespace[2pt]
+Actor phụ & Dịch vụ thanh toán giả lập \\
+\addlinespace[2pt]
+Trigger & Khách chọn Thanh toán từ giỏ \\
+\addlinespace[2pt]
+Tiền điều kiện & API và DB sẵn sàng, sản phẩm active; trước khi tạo đơn cần JWT hợp lệ \\
+\addlinespace[2pt]
+Hậu điều kiện thành công & Một Order PAID, Payment SUCCEEDED, kho đã giữ, điểm cộng một lần, UI hiển thị mã và xóa giỏ \\
+\addlinespace[2pt]
+Hậu điều kiện thất bại & Tạo đơn thất bại rollback toàn bộ; payment thất bại Order PAYMENT\_FAILED, giỏ giữ nguyên; không charge thành công \\
+\addlinespace[2pt]
+Yêu cầu & FR-03..FR-15, FR-18..FR-21, NFR-02,03,05 \\
+\addlinespace[2pt]
+Sơ đồ & usecase-checkout, activity-checkout, sequence-checkout, class-domain \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{Luồng chính}
+\begin{enumerate}
+\item Khách xem menu, mở chi tiết và chọn size, topping, qty.
+\item UI thêm vào giỏ và tính tổng tạm tính. Khách xem lại giỏ, nhập note/\allowbreak{}mã giảm giá nếu có.
+\item Nếu chưa đăng nhập, UI chuyển sang form và quay lại checkout sau khi JWT được cấp.
+\item Khách chọn WALLET hoặc CARD thử nghiệm và xác nhận.
+\item UI gọi POST /\allowbreak{}orders. NestJS kiểm tra JWT, DTO, giá và kho trong transaction; optimistic lock trừ kho; kiểm tra mã, tạo snapshot items và PENDING; commit.
+\item UI lưu orderId và sinh Idempotency-Key; gọi POST /\allowbreak{}payments trên chính đơn đó.
+\item API khóa dòng Order, kiểm tra chủ đơn, state, payment đang xử lý và key; tạo Payment PROCESSING; commit.
+\item Gọi mock gateway ngoài transaction; sau kết quả, transaction khóa Order, lưu Payment SUCCEEDED, chuyển PAID và cộng điểm.
+\item API trả kết quả. UI xóa giỏ, hiện mã đơn và polling GET /\allowbreak{}orders/\allowbreak{}:id để theo dõi.
+\end{enumerate}
+
+\subsection{Luồng thay thế}
+A1 ở bước 3: đăng ký tài khoản rồi trở lại checkout; từ chối xác thực thì giỏ không mất.
+
+A2 ở bước 5: hết hàng → 409; transaction rollback, giỏ giữ nguyên để sửa.
+
+A3 ở bước 5: mã sai/\allowbreak{}hết hạn → 422; không tạo đơn, không mất kho.
+
+A4 ở bước 8: thẻ bị từ chối → Payment FAILED, Order PAYMENT\_FAILED; giỏ và orderId giữ nguyên. Khách đổi thẻ/\allowbreak{}phương thức, sinh key mới trên cùng orderId.
+
+A5 ở bước 6: gửi lại cùng key → trả payment cũ, không trừ kho hay cộng điểm lặp.
+
+A6: khách hủy đơn chưa thanh toán và không có PROCESSING → CANCELLED, hoàn kho/\allowbreak{}mã, giỏ vẫn có thể sửa.
+
+A7: hai client tranh phần cuối → một transaction thắng, bên còn lại retry rồi 409 nếu hết kho.
+
+
+\subsection{Ngoại lệ}
+E1: JWT hết hạn → 401, yêu cầu đăng nhập lại, không tự xóa giỏ.
+
+E2: cùng key nhưng khác order/\allowbreak{}method/\allowbreak{}user → 422 IDEMPOTENCY\_KEY\_REUSED.
+
+E3: mất mạng sau POST /\allowbreak{}payments → giữ key, gửi lại chính yêu cầu để lấy kết quả; không tạo đơn mới.
+
+E4: key vẫn PROCESSING sau 5 giây → 409 PAYMENT\_IN\_PROGRESS; UI cho retry cùng key. Nếu API crash ở khoảng giữa hai transaction, mock hiện chưa có bộ reconciliation tự động; cần xử lý vận hành, không hứa bảo đảm exactly-once qua mọi sự cố.
+
+E5: lỗi 5xx trước khi client nhận POST /\allowbreak{}orders có thể đã commit: API tạo đơn chưa có create-order idempotency. UI không tự retry POST /\allowbreak{}orders và hướng dẫn xem lịch sử trước khi tạo lại.
+
+
+\subsection{Kịch bản chấp nhận}
+Given giỏ Cappuccino M x1 và Trà đào L + trân châu x2, When WALLET thành công, Then subtotal 158.000, PAID và 15 điểm. Given thẻ 4000000000000002, Then PAYMENT\_FAILED và không xóa giỏ. Given hai POST /\allowbreak{}payments đồng thời cùng key, Then cùng payment id và đúng một charge. Các trường hợp này được kiểm chứng bằng test integration/\allowbreak{}E2E; xem ma trận truy vết.
+
+
+\chapter{Mô hình hóa hệ thống}
+
+Các sơ đồ sau có nguồn PlantUML và bản SVG/PNG trong docs/diagrams. Sequence mô tả cả transaction tạo đơn và hai transaction thanh toán; state machine phân biệt quyền gateway với thao tác nhân viên. Class diagram thể hiện multiplicity và enum tương ứng Prisma schema.
+
+\clearpage\section{Use case tổng quát}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/usecase-system.png}\captionof{figure}{Use case tổng quát}\end{center}\clearpage
+
+\clearpage\section{Use case trọng tâm đặt và thanh toán}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/usecase-checkout.png}\captionof{figure}{Use case trọng tâm đặt và thanh toán}\end{center}\clearpage
+
+\clearpage\section{Activity đặt và thanh toán với swimlane}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/activity-checkout.png}\captionof{figure}{Activity đặt và thanh toán với swimlane}\end{center}\clearpage
+
+\clearpage\section{Sequence đặt và thanh toán idempotent}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/sequence-checkout.png}\captionof{figure}{Sequence đặt và thanh toán idempotent}\end{center}\clearpage
+
+\clearpage\begin{landscape}\section{Class diagram domain và enum}\begin{center}\includegraphics[width=235mm,height=118mm,keepaspectratio]{../docs/diagrams/class-domain.png}\captionof{figure}{Class diagram domain và enum}\end{center}\clearpage\end{landscape}
+
+\clearpage\section{Máy trạng thái đơn hàng}\begin{center}\includegraphics[width=160mm,height=180mm,keepaspectratio]{../docs/diagrams/state-order.png}\captionof{figure}{Máy trạng thái đơn hàng}\end{center}\clearpage
+
+\chapter{Thiết kế kiến trúc}
+
+\section{Kiến trúc BrewLite}
+
+\subsection{Phương pháp phân lớp và module domain}
+Browser/\allowbreak{}PWA → Next.js App Router → route proxy /\allowbreak{}api → NestJS → Prisma → PostgreSQL. UI không truy cập DB, không tự quyết định giá hay trạng thái thanh toán. Proxy cùng origin giúp trình duyệt không cần biết DNS nội bộ Docker. Gateway thanh toán là module mock trong API, không phải dịch vụ ngân hàng.
+
+
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.14\linewidth} >{\raggedright\arraybackslash}p{0.36\linewidth} >{\raggedright\arraybackslash}p{0.44\linewidth}@{}}
+\toprule
+\textbf{Thành phần} & \textbf{Trách nhiệm} & \textbf{Mã nguồn} \\
+\midrule\endhead
+Next.js & Menu, tùy chọn, cart, auth, checkout, tracking, staff và PWA & apps/\allowbreak{}web/\allowbreak{}src/\allowbreak{}app, components, lib \\
+\addlinespace[2pt]
+Proxy & Chuyển tiếp các API được cho phép; timeout, không cache & apps/\allowbreak{}web/\allowbreak{}src/\allowbreak{}app/\allowbreak{}api/\allowbreak{}[...path]/\allowbreak{}route.ts \\
+\addlinespace[2pt]
+Auth & DTO, bcrypt, JWT và role guards & apps/\allowbreak{}api/\allowbreak{}src/\allowbreak{}auth \\
+\addlinespace[2pt]
+Products & Menu/\allowbreak{}chi tiết/\allowbreak{}topping & apps/\allowbreak{}api/\allowbreak{}src/\allowbreak{}products \\
+\addlinespace[2pt]
+Orders & Transaction, snapshot giá, optimistic kho, state machine & apps/\allowbreak{}api/\allowbreak{}src/\allowbreak{}orders \\
+\addlinespace[2pt]
+Payments & Claim idempotency, khóa Order, mock charge, kết quả atomic & apps/\allowbreak{}api/\allowbreak{}src/\allowbreak{}payments \\
+\addlinespace[2pt]
+Promotions /\allowbreak{} loyalty & Giảm tiền có điều kiện, giới hạn lượt, cộng/\allowbreak{}thu hồi điểm & apps/\allowbreak{}api/\allowbreak{}src/\allowbreak{}promotions, loyalty \\
+\addlinespace[2pt]
+Persistence & Prisma schema, migration, seed & apps/\allowbreak{}api/\allowbreak{}prisma, src/\allowbreak{}database \\
+\addlinespace[2pt]
+Vận hành & Env validation, request ID, health DB, log không chứa body & apps/\allowbreak{}api/\allowbreak{}src/\allowbreak{}config, common, health \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{Giao dịch và nhất quán}
+Tạo đơn dùng ReadCommitted + UPDATE có version và stock, retry tối đa 8 lần có backoff. Nhiều dòng cùng sản phẩm được gộp số lượng trước khi giữ kho. Mã khuyến mãi và ghi đơn nằm trong transaction nên lỗi rollback cả kho. Dòng Order được khóa khi claim payment và hủy/\allowbreak{}cập nhật để tránh race. Unique Payment.idempotencyKey bảo vệ cả khi API nhiều replica. Hash gồm user/\allowbreak{}order/\allowbreak{}method, không lưu số thẻ.
+
+
+Gateway chạy ngoài transaction để không giữ khóa khi chờ mạng. Transaction kết quả lưu payment, trạng thái và điểm cùng lúc. Giới hạn: crash giữa claim và finalize có thể để lại PROCESSING; chưa có outbox/\allowbreak{}reconciliation. Giải pháp đủ cho mock bài tập, chưa áp dụng cho thu tiền thật. POST /\allowbreak{}orders chưa có idempotency riêng.
+
+
+\subsection{Triển khai}
+Local: Docker Compose 3 dịch vụ, health dependency, persistent volume. Production được chuẩn bị cho VPS với Caddy HTTPS, web/\allowbreak{}api nội bộ và DB không publish cổng; GHCR images theo SHA; SSH deploy, migration, smoke và khôi phục image cũ nếu smoke thất bại. Sơ đồ deployment ghi rõ local kiểm chứng và production chưa được cấp host. Không gán tên Render/\allowbreak{}Railway khi chưa dùng thực tế.
+
+
+\subsection{Trade off}
+Monolith module giảm chi phí vận hành và cho transaction DB đơn giản; quy mô lớn phải tách gateway/\allowbreak{}worker và giám sát. Cart persist tăng tiện lợi, nhưng giá là tạm tính; server luôn tính lại. JWT hiện lưu sessionStorage để không kéo dài qua phiên, vẫn cần bảo vệ XSS; hệ thống thực nên dùng cookie HttpOnly và CSRF thích hợp. PWA hỗ trợ cài đặt và màn hình offline, không chấp nhận giao dịch offline.
+
+
+\section{ADR 001 Monorepo npm workspaces}
+
+Ngày: 2026-11-06. Trạng thái: Accepted (quyết định thiết kế; không phải minh chứng production).
+
+
+\subsection{Bối cảnh và quyết định}
+Đồng bộ frontend/\allowbreak{}backend/\allowbreak{}test và một lockfile; dễ chạy CI và Compose. Đổi lại Docker build context lớn; dùng .dockerignore. Không chọn microservices vì nghiệp vụ và nhóm nhỏ.
+
+
+\subsection{Hệ quả}
+Được truy vết trong architecture.md, schema/\allowbreak{}mã nguồn và sơ đồ; thay đổi quyết định phải bổ sung ADR thay thế thay vì sửa lịch sử.
+
+
+\section{ADR 002 PostgreSQL và Prisma}
+
+Ngày: 2026-11-06. Trạng thái: Accepted (quyết định thiết kế; không phải minh chứng production).
+
+
+\subsection{Bối cảnh và quyết định}
+Migration có version, snapshot giá, transaction và optimistic version stock. Không dùng SQLite vì cần chứng minh concurrency PostgreSQL đúng môi trường đề bài.
+
+
+\subsection{Hệ quả}
+Được truy vết trong architecture.md, schema/\allowbreak{}mã nguồn và sơ đồ; thay đổi quyết định phải bổ sung ADR thay thế thay vì sửa lịch sử.
+
+
+\section{ADR 003 Proxy cùng origin}
+
+Ngày: 2026-11-06. Trạng thái: Accepted (quyết định thiết kế; không phải minh chứng production).
+
+
+\subsection{Bối cảnh và quyết định}
+UI gọi /\allowbreak{}api; Next route chuyển tới API\_INTERNAL\_URL ở runtime. Chỉ cho prefix API hợp lệ và không chuyển cookie người dùng; JWT được gửi Authorization. Thêm một hop để đổi lấy cấu hình Docker đơn giản.
+
+
+\subsection{Hệ quả}
+Được truy vết trong architecture.md, schema/\allowbreak{}mã nguồn và sơ đồ; thay đổi quyết định phải bổ sung ADR thay thế thay vì sửa lịch sử.
+
+
+\section{ADR 004 Thanh toán mock idempotent}
+
+Ngày: 2026-11-06. Trạng thái: Accepted (quyết định thiết kế; không phải minh chứng production).
+
+
+\subsection{Bối cảnh và quyết định}
+Unique key toàn DB, hash user/\allowbreak{}order/\allowbreak{}method, khóa dòng Order và hai transaction bao quanh gateway. Replay trả cùng payment; lỗi payload trả 422. Sự cố crash cần reconciliation trước cổng thật; không tuyên bố exactly-once xuyên sự cố.
+
+
+\subsection{Hệ quả}
+Được truy vết trong architecture.md, schema/\allowbreak{}mã nguồn và sơ đồ; thay đổi quyết định phải bổ sung ADR thay thế thay vì sửa lịch sử.
+
+
+\section{ADR 005 Delivery bằng image bất biến}
+
+Ngày: 2026-11-06. Trạng thái: Accepted (quyết định thiết kế; không phải minh chứng production).
+
+
+\subsection{Bối cảnh và quyết định}
+GHCR tag SHA, VPS Compose + Caddy, migration trước service, smoke sau deploy, rollback image trước đó. Không hạ migration tự động; yêu cầu migration tương thích ngược và backup trước thay đổi phá hủy.
+
+
+\subsection{Hệ quả}
+Được truy vết trong architecture.md, schema/\allowbreak{}mã nguồn và sơ đồ; thay đổi quyết định phải bổ sung ADR thay thế thay vì sửa lịch sử.
+
+
+\clearpage\section{Deployment diagram}\begin{figure}[ht]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{../docs/diagrams/deployment.png}\caption{Local và CI cùng topology VPS production được chuẩn bị. Chưa gắn host production thật.}\end{figure}\clearpage
+
+\chapter{Quản lý Agile Scrum}
+
+\section{Product Backlog}
+
+Product vision: khách chọn đồ uống, thanh toán không tiền mặt và nhận nhanh ở quầy. Owner được mô tả theo vai trò; tên thành viên thật phải bổ sung khi nhóm cung cấp. Điểm là ước lượng kế hoạch, không phải số điểm chấm được bảo đảm.
+
+
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.08\linewidth} >{\raggedright\arraybackslash}p{0.28\linewidth} >{\raggedright\arraybackslash}p{0.08\linewidth} >{\raggedright\arraybackslash}p{0.05\linewidth} >{\raggedright\arraybackslash}p{0.09\linewidth} >{\raggedright\arraybackslash}p{0.09\linewidth} >{\raggedright\arraybackslash}p{0.23\linewidth}@{}}
+\toprule
+\textbf{ID} & \textbf{User story và giá trị} & \textbf{Ưu tiên} & \textbf{SP} & \textbf{A1 Task} & \textbf{A2 Sprint} & \textbf{Acceptance} \\
+\midrule\endhead
+US-01 & Là developer, tôi muốn project có cấu trúc để chạy và bàn giao & Must & 2 & 1 & 1 & Next/\allowbreak{}Nest, README, env mẫu, Git \\
+\addlinespace[2pt]
+US-02 & Là khách, tôi muốn đọc menu chính xác từ API & Must & 2 & 2 & 1 & GET /\allowbreak{}products, seed, API test \\
+\addlinespace[2pt]
+US-03 & Là khách, tôi muốn menu dùng được trên điện thoại & Must & 3 & 3 & 1 & Loading/\allowbreak{}empty/\allowbreak{}error và lọc/\allowbreak{}tìm \\
+\addlinespace[2pt]
+US-04 & Là khách, tôi muốn chọn size/\allowbreak{}topping và biết giá & Must & 3 & 4 & 1 & Chi tiết, lựa chọn và tính giá \\
+\addlinespace[2pt]
+US-05 & Là khách, tôi muốn chỉnh giỏ trước khi mua & Must & 3 & 5 & 2 & Qty/\allowbreak{}xóa, badge/\allowbreak{}tổng, persist \\
+\addlinespace[2pt]
+US-06 & Là khách, tôi muốn đơn lưu đúng trong hệ thống & Must & 5 & 6 & 2 & DTO, JWT, PENDING, transaction \\
+\addlinespace[2pt]
+US-07 & Là khách, tôi muốn tài khoản riêng để bảo vệ đơn & Must & 3 & 7 & 2 & Bcrypt, register/\allowbreak{}login JWT, ownership \\
+\addlinespace[2pt]
+US-08 & Là khách, tôi muốn thanh toán Ví/\allowbreak{}Thẻ mô phỏng an toàn & Must & 5 & 8 & 2 & PAID/\allowbreak{}FAILED, key, giữ giỏ khi lỗi \\
+\addlinespace[2pt]
+US-09 & Là khách/\allowbreak{}giảng viên, tôi muốn xác nhận và tái tạo bản chạy & Must & 3 & 9 & 2 & History, Compose, demo và README \\
+\addlinespace[2pt]
+US-10 & Là PO, tôi muốn nghiệp vụ không sai khi gửi lặp/\allowbreak{}đồng thời & Must & 8 & 10 & 2 & State, idempotency, không âm kho, promo/\allowbreak{}loyalty \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{Definition of Ready}
+Story có giá trị và acceptance kiểm chứng được, FR/\allowbreak{}UC liên quan, dependency rõ, ước lượng và phạm vi đủ nhỏ để demo. Task 2/\allowbreak{}3 của A2 dựa trên SRS/\allowbreak{}use case đã lưu trước khi hiện thực.
+
+
+\subsection{Definition of Done}
+Build/\allowbreak{}lint/\allowbreak{}typecheck đạt; acceptance đã kiểm chứng; API validate và UI xử lý loading/\allowbreak{}error; có test tương ứng cho rủi ro; không có secret; migration/\allowbreak{}README đồng bộ; source diagram và ảnh đồng bộ; PR được review và CI xanh; tài liệu ghi đúng bằng chứng. Chỉ đánh dấu production Done sau khi HTTPS/\allowbreak{}frontend/\allowbreak{}API/\allowbreak{}health hoạt động.
+
+
+\subsection{Vai trò Scrum}
+PO: xác nhận phạm vi và nghiệm thu. SM: theo dõi blocker, điều phối event. Developers: phân tích, code, test, docs, vận hành. Chưa gán tên thật khi chưa có danh sách nhóm. Codex kế thừa backend Claude và hoàn thiện bản riêng; không thay lịch sử công việc thành những buổi họp nhóm chưa diễn ra.
+
+
+\section{Kế hoạch Sprint và ánh xạ hai Assignment}
+
+Assignment 1 gợi ý 3 Sprint: A1-S1 task 1–4; A1-S2 task 5–7; A1-S3 task 8–10. Assignment 2 quy định 2 Sprint hiện thực sau phân tích/\allowbreak{}thiết kế: A2-S1 tập trung nền tảng/\allowbreak{}menu; A2-S2 hoàn thành end-to-end và delivery. Dùng cùng Product Backlog, ánh xạ A1-S2 và S3 vào A2-S2; không tuyên bố đề A2 yêu cầu 3 Sprint.
+
+
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.12\linewidth} >{\raggedright\arraybackslash}p{0.18\linewidth} >{\raggedright\arraybackslash}p{0.12\linewidth} >{\raggedright\arraybackslash}p{0.5\linewidth}@{}}
+\toprule
+\textbf{Sprint A2} & \textbf{Goal} & \textbf{Backlog} & \textbf{Increment /\allowbreak{} bằng chứng nghiệm thu} \\
+\midrule\endhead
+Sprint 1 & Nền tảng tái lập và xem menu thật & US-01..04; requirement/\allowbreak{}model/\allowbreak{}architecture; CI cơ bản & API menu/\allowbreak{}chi tiết, giao diện mobile, seed, test API/\allowbreak{}component, SRS + UML + ADR \\
+\addlinespace[2pt]
+Sprint 2 & Đặt đến xác nhận và bàn giao & US-05..10; integration/\allowbreak{}E2E; Docker, CD, báo cáo & Auth/\allowbreak{}giỏ/\allowbreak{}đơn/\allowbreak{}thanh toán/\allowbreak{}lịch sử/\allowbreak{}staff; concurrency tests; image pipeline; deploy nếu có host \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{Sprint Planning}
+Ưu tiên Must và các phụ thuộc: docs yêu cầu → mô hình → kiến trúc → API menu/\allowbreak{}UI → auth/\allowbreak{}order/\allowbreak{}cart → payment → test/\allowbreak{}delivery. Mỗi story tách thiết kế/\allowbreak{}code/\allowbreak{}test/\allowbreak{}docs; ước lượng tổng 37 SP. Đây là kế hoạch phân rã để nhóm sử dụng; không phải timesheet nhiều tuần đã diễn ra.
+
+
+\subsection{Daily Scrum}
+Nhóm cập nhật ba mục: tiến tới Sprint Goal, kế hoạch tiếp theo, blocker; giới hạn 15 phút. Nhật ký quan sát thực ngày 06/\allowbreak{}11/\allowbreak{}2026: Claude dừng do giới hạn sử dụng; Codex kế thừa vào folder riêng; PostgreSQL test tách biệt; CI bắt lỗi kiểu test; bổ sung chống race payment và hủy. Không tạo nhật ký họp ngày khác.
+
+
+\subsection{Burndown}
+{\small\ttfamily burndown-\allowbreak{}plan.\allowbreak{}csv} chỉ biểu diễn đường kế hoạch 10 ngày cho 37 SP. Chưa có nhật ký SP thực tế qua từng ngày, vì vậy không vẽ đường Actual giả. Nhóm cần cập nhật từ issue board tại Daily Scrum trước nghiệm thu quy trình. Lịch sử Git và Actions phản ánh công việc kỹ thuật thực hiện trong phiên này.
+
+
+\section{Sprint Review và Retrospective}
+
+\subsection{Review kỹ thuật ngày 06 tháng 11 năm 2026}
+Increment được chuẩn bị cho demo: menu → size/\allowbreak{}topping → giỏ → register/\allowbreak{}login → tạo đơn → Ví/\allowbreak{}Thẻ mock → xác nhận/\allowbreak{}lịch sử. Phần mở rộng: quầy pha chế, khuyến mãi, điểm, hủy và hoàn kho. Kết quả test/\allowbreak{}CI được liên kết ở {\small\ttfamily .\allowbreak{}.\allowbreak{}/\allowbreak{}quality/\allowbreak{}verification.\allowbreak{}md}; không đồng nhất review tự động với nghiệm thu chính thức của PO/\allowbreak{}giảng viên.
+
+
+Các tình huống review: giỏ giữ qua reload; thẻ từ chối giữ giỏ; retry cùng Order; 10 payment cùng key; 20 khách tranh 5 phần; STAFF không tự đặt PAID và khách không đổi state. Bằng chứng nằm ở test và Actions, thay vì lời khẳng định không kèm kiểm chứng.
+
+
+\subsection{Retrospective từ công việc đã diễn ra}
+Điều hiệu quả: một schema dùng cho API/\allowbreak{}test/\allowbreak{}diagrams; kế thừa backend đang có; tách folder và DB để hai tác nhân không ghi đè; CI tìm ra lỗi kiểu mà unit runner transpile không phát hiện.
+
+
+Điều cần cải thiện: viết DTO/\allowbreak{}API contract trước UI; tính trước giới hạn transaction pool dưới tải; chạy typecheck cùng test; quản lý phiên thanh toán bền hơn; cấp môi trường production sớm.
+
+
+Hành động tiếp theo: chuyển JWT sang cookie HttpOnly khi triển khai ứng dụng thực; thêm create-order idempotency, thời hạn giữ kho và reconciliation PROCESSING; rà soát dependency audit; kiểm tra backup phục hồi; nhóm điền vai trò thực và tổ chức nghiệm thu với giảng viên.
+
+
+\subsection{Phản hồi khách hàng}
+Chưa có biên bản phản hồi trực tiếp của giảng viên/\allowbreak{}PO. Không ghi tên, chữ ký hoặc đánh giá giả. Khi demo, ghi người tham dự, ngày, acceptance đạt/\allowbreak{}chưa đạt và chuyển góp ý thành issue có ưu tiên.
+
+
+\chapter{Hiện thực phần mềm}
+\section{Frontend Next.js}
+Menu gọi API thật và hiển thị các trạng thái loading, empty và error. Khách lọc danh mục, tìm đồ uống, chọn size S/M/L và topping. Zustand persist giữ giỏ trên thiết bị, mỗi tổ hợp sản phẩm/size/topping là một dòng; số lượng nguyên trong phạm vi 1–20. Giao diện dùng nhãn form, thông báo lỗi và bố cục responsive. Manifest và service worker hỗ trợ cài PWA và trang offline; không cache giao dịch hoặc API chứa dữ liệu cá nhân.
+\section{Xác thực và phân quyền}
+DTO chuẩn hóa email, kiểm tra độ dài và định dạng. Mật khẩu băm bcrypt; JWT có subject và role. API kiểm tra quyền sở hữu đơn, trả 404 khi khách truy cập đơn người khác; chỉ STAFF cập nhật trạng thái. Token lưu ở sessionStorage cho phiên demo; cookie HttpOnly và cơ chế chống XSS/CSRF đầy đủ là hướng hoàn thiện trước vận hành thực.
+\section{Tạo đơn và optimistic locking}
+Server lấy lại giá và topping từ DB, gộp số lượng theo productId và cập nhật tồn kho theo thứ tự id. Câu lệnh update chỉ thành công khi version khớp và stock đủ. Nếu count bằng 0, toàn transaction rollback và retry có backoff, tối đa 8 lần. Tạo đơn, snapshot items, giữ kho và sử dụng promotion nằm cùng transaction.
+\begin{quote}\small\ttfamily
+UPDATE Product SET stock = stock - qty, version = version + 1\par
+WHERE id = productId AND version = expectedVersion AND stock >= qty;
+\end{quote}
+\section{Thanh toán idempotent}
+Payment có unique Idempotency-Key, hash của user/order/method và số tiền lấy từ đơn. Khi claim, API khóa dòng Order và đọc lại key sau khóa để request đồng thời không bị xem là một payment khác. Gọi gateway ngoài transaction, sau đó finalize payment, state và loyalty nguyên tử; retry finalize dùng kết quả đã nhận, không charge lại. Replay cùng key trả cùng payment; dùng key cho payload khác bị từ chối 422. Mỗi lần thử mới sau FAILED sử dụng key mới trên cùng đơn.
+\section{Hủy và chuyển trạng thái}
+Các thao tác hủy/thay đổi state khóa cùng dòng Order. Không hủy trong lúc payment PROCESSING. State machine chặn chuyển sai; hủy hợp lệ hoàn kho, trả lượt promotion và thu hồi loyalty khi PAID bị hủy tại quầy. Đây là hoàn tiền mô phỏng, không phải refund ngân hàng.
+\section{Khôi phục checkout}
+UI giữ orderId và key trong sessionStorage khi chưa rõ kết quả thanh toán, giữ giỏ nếu thất bại và thử lại trên cùng order. Pending được xóa phù hợp khi đổi tài khoản; hủy một đơn khác không được xóa nhầm pending. Nếu kết quả tạo đơn không rõ, UI yêu cầu xem lịch sử và không tự động gửi POST tạo đơn lần nữa. API tạo đơn chưa có idempotency riêng; process crash giữa claim và finalize cần reconciliation trước khi tích hợp cổng thật.
+
+
+\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{assets/menu-desktop.png}\caption{Giao diện thực đơn trên desktop}\end{figure}\clearpage
+
+\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{assets/menu-mobile.png}\caption{Giao diện thực đơn trên điện thoại}\end{figure}\clearpage
+
+\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{assets/checkout.png}\caption{Giao diện thanh toán mô phỏng}\end{figure}\clearpage
+
+\clearpage\begin{figure}[p]\centering\includegraphics[width=160mm,height=205mm,keepaspectratio]{assets/confirmation.png}\caption{Xác nhận đơn hàng thực tế}\end{figure}\clearpage
+
+\chapter{Kiểm thử và bằng chứng}
+
+\section{Bằng chứng kiểm chứng}
+
+Ngày kiểm tra: 06/\allowbreak{}11/\allowbreak{}2026, Windows 11, Node 24.16.0 local, Node 22 trong Docker/\allowbreak{}CI, PostgreSQL 17 Docker. Dự án được tiếp quản từ backend Claude Code trong {\small\ttfamily brewlite}, hoàn thiện riêng, không ghi đè bản đó. Claude Code đã rà soát read-only payment/\allowbreak{}order/\allowbreak{}checkout/\allowbreak{}cart; các lỗi pending và số lượng được sửa. Giới hạn crash recovery của mock được ghi trong SRS/\allowbreak{}ADR, không tự gọi lại gateway sau crash vì cache mock chỉ ở RAM.
+
+
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.25\linewidth} >{\raggedright\arraybackslash}p{0.71\linewidth}@{}}
+\toprule
+\textbf{Kiểm tra} & \textbf{Kết quả quan sát} \\
+\midrule\endhead
+Unit backend & 50 tests /\allowbreak{} 6 suites pass \\
+\addlinespace[2pt]
+Unit/\allowbreak{}component web & 8 tests /\allowbreak{} 2 files pass (cart + menu component) \\
+\addlinespace[2pt]
+Integration PostgreSQL & 31 tests /\allowbreak{} 4 suites pass; database riêng brewlite\_test \\
+\addlinespace[2pt]
+Đồng thời kho & 20 requests, stock 5: đúng 5 thành công; thêm qty=2 không âm kho \\
+\addlinespace[2pt]
+Đồng thời thanh toán & 10 cùng key: cùng payment, đúng một charge; hai key/\allowbreak{}đơn không charge hai lần \\
+\addlinespace[2pt]
+Docker & Web/\allowbreak{}API/\allowbreak{}DB build và cả ba healthy trên localhost \\
+\addlinespace[2pt]
+Typecheck/\allowbreak{}lint/\allowbreak{}build & Đạt trên local và Docker build; GitHub CI chạy độc lập \\
+\addlinespace[2pt]
+E2E desktop/\allowbreak{}mobile & 6 tests pass: 3 tình huống × desktop và mobile; success, decline/\allowbreak{}retry, resume/\allowbreak{}cancel pending \\
+\addlinespace[2pt]
+HTTPS production & Chưa có host/\allowbreak{}domain và deploy secrets; chưa thực hiện \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{CI và pull request thật}
+\begin{itemize}
+\item Repository: \url{https://github.com/Kenkra9999/brewlite2}
+\item PR: \url{https://github.com/Kenkra9999/brewlite2/pull/1}
+\item Run phát hiện lỗi: \url{https://github.com/Kenkra9999/brewlite2/actions/runs/42236429957} — typecheck bắt {\small\ttfamily exact} không thuộc ByRoleOptions trong component test. Pipeline dừng, build/\allowbreak{}E2E không chạy tiếp. Đây là failure thật đã được sửa, không phải ảnh dựng.
+\item Run thành công: \url{https://github.com/Kenkra9999/brewlite2/actions/runs/42238619259} — lint, typecheck, 50 backend unit, 8 web unit/\allowbreak{}component, 31 integration, build và 6 E2E desktop/\allowbreak{}mobile đều xanh.
+\item GitHub main đã bật required check {\small\ttfamily quality}, strict up-to-date, enforce admins và linear history ngày 06/\allowbreak{}11/\allowbreak{}2026. PR phải xanh mới merge; không chỉ có YAML.
+\end{itemize}
+
+\subsection{Giới hạn và bước kiểm tra bổ sung}
+Thanh toán chỉ mô phỏng; chưa có reconciliation cho PROCESSING sau process crash; POST /\allowbreak{}orders chưa idempotent; đơn treo chưa có TTL. JWT ở sessionStorage, chưa có HttpOnly cookie. Dependency audit còn advisory ở bộ phiên bản kế thừa; cần nâng dependency có kiểm thử trước vận hành thật. Các test tự động không chứng minh SLA, không thay nghiệm thu khách hàng hoặc pentest. Chưa tuyên bố đáp ứng production khi mới có Compose và workflow.
+
+
+\section{Đo hiệu năng local}Đo 100 request GET /products tuần tự sau 5 lần warmup: p50 4.02 ms, p95 5.92 ms, lớn nhất 7.29 ms. Ngưỡng p95 của bài là 500 ms. Thời điểm đo 2026-11-06T14:53:07.086Z; Node v24.16.0, win32. Đây là phép đo local trên seed nhỏ, không phải cam kết SLA production.
+
+\chapter{Triển khai và bàn giao}
+
+\section{Hướng dẫn triển khai và rollback}
+
+\subsection{Trạng thái và sơ đồ}
+Local được chạy qua Compose để kiểm chứng. Production được chuẩn bị cho VPS Linux + Docker + Caddy nhưng chưa có host/\allowbreak{}domain được cung cấp. {\small\ttfamily diagrams/\allowbreak{}deployment.\allowbreak{}puml} tách local/\allowbreak{}CI/\allowbreak{}production và ghi rõ trạng thái này. URL thật và ngày smoke phải được bổ sung sau khi provision. Không dùng URL ngẫu nhiên hoặc giả lập minh chứng deploy.
+
+
+\subsection{Chuẩn bị VPS}
+\begin{enumerate}
+\item Cấp VPS có Docker Engine/\allowbreak{}Compose v2, DNS A/\allowbreak{}AAAA domain trỏ đúng host và mở 80/\allowbreak{}443. SSH 22 chỉ cho người vận hành/\allowbreak{}CI; không mở 5432/\allowbreak{}3001.
+\item Tạo {\small\ttfamily /\allowbreak{}opt/\allowbreak{}brewlite/\allowbreak{}deploy}, copy compose production và Caddyfile. Copy {\small\ttfamily .\allowbreak{}env.\allowbreak{}production.\allowbreak{}example} thành {\small\ttfamily /\allowbreak{}opt/\allowbreak{}brewlite/\allowbreak{}.\allowbreak{}env}, chmod 600 và điền DOMAIN, IMAGE\_PREFIX, POSTGRES\_PASSWORD, DATABASE\_URL, JWT\_SECRET. Password trong URL cần URL encode; ví dụ chỉ dùng ký tự URL-safe.
+\item Dùng image GHCR có tag full SHA. Package private cần login GHCR trên VPS bằng token chỉ read:packages; không lưu token vào repo/\allowbreak{}log.
+\item Tạo GitHub Environment {\small\ttfamily production}; secrets {\small\ttfamily DEPLOY\_\allowbreak{}HOST}, {\small\ttfamily DEPLOY\_\allowbreak{}USER}, {\small\ttfamily DEPLOY\_\allowbreak{}SSH\_\allowbreak{}KEY}, {\small\ttfamily DEPLOY\_\allowbreak{}KNOWN\_\allowbreak{}HOSTS}. Known hosts được xác minh từ chủ VPS; không tắt StrictHostKeyChecking. Tài khoản deploy có quyền Docker (tương đương root trên host), cần máy riêng cho bài.
+\item Workflow Delivery chạy quality gate → build images → push GHCR → SSH deploy → migrate → up --wait → HTTPS smoke. Chạy thủ công deploy=false để chỉ xuất image, deploy=true khi host đã cấu hình. Tag {\small\ttfamily v*} xuất image; tự deploy khi repository variable {\small\ttfamily PRODUCTION\_\allowbreak{}ENABLED=true}. Manual deploy=true luôn yêu cầu secrets. Khi chưa có host, job deploy được skip rõ ràng, không coi là đã lên production.
+\end{enumerate}
+
+\subsection{Migration và dữ liệu}
+{\small\ttfamily prisma migrate deploy} chạy một lần trước đổi dịch vụ; API production không tự seed hoặc chạy migration mỗi replica. Seed chỉ dùng local/\allowbreak{}demo. Trước thay đổi schema phá hủy, backup bằng pg\_dump và diễn tập restore. Dùng migration expand/\allowbreak{}contract tương thích cả image trước và image mới.
+
+
+\subsection{Health và smoke}
+\begin{itemize}
+\item {\small\ttfamily https:/\allowbreak{}/\allowbreak{}DOMAIN/\allowbreak{}} là frontend.
+\item {\small\ttfamily https:/\allowbreak{}/\allowbreak{}DOMAIN/\allowbreak{}backend/\allowbreak{}health} là health của NestJS qua Caddy.
+\item {\small\ttfamily https:/\allowbreak{}/\allowbreak{}DOMAIN/\allowbreak{}backend/\allowbreak{}products} là API công khai theo đường dẫn gateway.
+\item {\small\ttfamily https:/\allowbreak{}/\allowbreak{}DOMAIN/\allowbreak{}api/\allowbreak{}products} là proxy Next cùng origin.
+\item {\small\ttfamily docker compose -\allowbreak{}-\allowbreak{}env-\allowbreak{}file .\allowbreak{}env -\allowbreak{}f docker-\allowbreak{}compose.\allowbreak{}production.\allowbreak{}yml ps} kiểm tra container; {\small\ttfamily logs -\allowbreak{}-\allowbreak{}tail=100 api} kiểm tra lỗi. Không log env, body thẻ, password, token.
+\end{itemize}
+
+\subsection{Rollback}
+{\small\ttfamily deploy/\allowbreak{}deploy.\allowbreak{}sh SHA} lưu {\small\ttfamily .\allowbreak{}deployed-\allowbreak{}tag} chỉ sau smoke thành công. Nếu deploy/\allowbreak{}migration/\allowbreak{}smoke lỗi, script phục hồi image tag trước và trả exit 1. Không tự rollback schema: image trước chỉ an toàn nếu migration tương thích ngược. Nếu migration phá hủy hoặc dữ liệu hỏng, dừng nhận giao dịch và phục hồi backup theo quyết định vận hành. Lần deploy đầu không có previous tag; script báo rõ, không giả vờ đã rollback.
+
+
+\subsection{CI và branch protection}
+Quality Gate chạy PR/\allowbreak{}push main, Postgres service test, unit/\allowbreak{}integration/\allowbreak{}build và E2E desktop/\allowbreak{}mobile. Yêu cầu GitHub bảo vệ main với check {\small\ttfamily quality}, không cho merge khi check đỏ. Bằng chứng một lần lỗi và lần thành công cùng link PR nằm ở quality/\allowbreak{}verification.md. Cấu hình YAML không tự tạo môi trường production hoặc bật branch protection.
+
+
+\subsection{Backup mẫu}
+Từ thư mục production, chạy {\small\ttfamily docker compose -\allowbreak{}-\allowbreak{}env-\allowbreak{}file .\allowbreak{}env -\allowbreak{}f docker-\allowbreak{}compose.\allowbreak{}production.\allowbreak{}yml exec -\allowbreak{}T db pg\_\allowbreak{}dump -\allowbreak{}U brewlite brewlite > backup.\allowbreak{}sql}. Lưu backup ở nơi truy cập hạn chế, thử restore vào DB tách biệt. Không commit backup chứa dữ liệu người dùng.
+
+
+\section{Kịch bản demo trực tiếp}
+
+Thời lượng gợi ý 7–10 phút. Chạy Compose và mở web/\allowbreak{}API health trước demo; đây là kịch bản thực hiện, không phải link video đã quay.
+
+
+\begin{enumerate}
+\item Giới thiệu Next.js/\allowbreak{}NestJS/\allowbreak{}PostgreSQL, Product Backlog và ma trận truy vết. Cho xem health và menu API (1 phút).
+\item Trên viewport điện thoại, mở Cappuccino, chọn M + Trân châu, thêm giỏ. Đổi qty rồi reload để chứng minh persist (1 phút).
+\item Đăng ký tài khoản mới hoặc dùng demo, áp WELCOME10 cho đơn đủ 50k, chọn WALLET; xác nhận PAID và điểm đúng floor(total/\allowbreak{}10000) (1 phút).
+\item Mở lịch sử, mã đơn và tiến trình. Đăng nhập barista ở cửa sổ khác, chuyển PAID→PREPARING→READY→COMPLETED; chờ polling cập nhật (1 phút).
+\item Tạo đơn khác, CARD 4000000000000002; xem PAYMENT\_FAILED và giỏ còn nguyên; đổi thẻ 4242424242424242; trả lại thành công trên cùng mã đơn (1 phút).
+\item Mở test PAY-T03 cho 10 payment cùng key và INT-T09 cho 20 order tranh 5 phần; trình bày kết quả thật. Thử transition sai và xem 409 (1 phút).
+\item Cho xem PR/\allowbreak{}Actions lỗi→sửa→xanh, Docker images, README, LaTeX/\allowbreak{}PDF và sơ đồ. Phân biệt local/\allowbreak{}CD cấu hình với production đã deploy. Ghi nhận feedback thật của giảng viên thành issue (1–2 phút).
+\end{enumerate}
+
+Nếu quay video, ghi màn hình phiên demo thật; không dựng ảnh giả để chứng minh CI hay URL. Có video quay tự động từ phiên ứng dụng thật tại demo/\allowbreak{}BrewLite\_Demo.webm; không lồng tiếng. Kịch bản trên dùng cho demo trực tiếp có giải thích.
+
+
+\section{Release notes}
+
+\subsection{Phiên bản 1.0.0 ngày 06 tháng 11 năm 2026}
+Hoàn thiện luồng menu đến xác nhận: Next.js mobile/\allowbreak{}PWA, NestJS REST, Prisma migration PostgreSQL, JWT/\allowbreak{}bcrypt, size/\allowbreak{}topping, cart persist, WALLET/\allowbreak{}CARD mock, history/\allowbreak{}tracking và staff board. Bổ sung promo/\allowbreak{}loyalty, state machine, optimistic kho, payment key và khóa chống race hủy/\allowbreak{}thanh toán. Có unit/\allowbreak{}integration/\allowbreak{}E2E, Compose local, Quality Gate và workflow xuất image/\allowbreak{}CD, UML và báo cáo LaTeX.
+
+
+Giới hạn phiên bản: thanh toán mô phỏng, chưa có gateway thật/\allowbreak{}reconciliation; kho PENDING không tự hết hạn; chưa có create-order idempotency; seed demo không dùng production; chưa cấp host/\allowbreak{}domain nên production chỉ có cấu hình. Danh sách thành viên và biên bản nghiệm thu cần nhóm bổ sung. Xem verification.md để biết chính xác test và CI đã thực sự chạy.
+
+
+\chapter{Truy vết và đối chiếu tiêu chí}
+
+\section{Ma trận truy vết}
+
+Đường dẫn code tương đối từ {\small\ttfamily apps/\allowbreak{}api/\allowbreak{}src} hoặc {\small\ttfamily apps/\allowbreak{}web/\allowbreak{}src}. Tên test trỏ đến test thực trong repository. NFR chưa có bằng chứng phải giữ trạng thái chưa nghiệm thu; không suy ra hoàn thành từ việc có mã nguồn.
+
+
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.12\linewidth} >{\raggedright\arraybackslash}p{0.16\linewidth} >{\raggedright\arraybackslash}p{0.17\linewidth} >{\raggedright\arraybackslash}p{0.23\linewidth} >{\raggedright\arraybackslash}p{0.24\linewidth}@{}}
+\toprule
+\textbf{Yêu cầu} & \textbf{Use case /\allowbreak{} story} & \textbf{Thiết kế} & \textbf{Code hoặc API} & \textbf{Test /\allowbreak{} bằng chứng} \\
+\midrule\endhead
+FR-01 & UC-01 /\allowbreak{} US-02,03 & usecase-system, activity-checkout & products.service.ts; GET /\allowbreak{}products; web/\allowbreak{}app/\allowbreak{}page.tsx & products.int-spec.ts; WEB-T01..03; E2E-T01 \\
+\addlinespace[2pt]
+FR-02,03 & UC-01 /\allowbreak{} US-04 & class-domain, activity-checkout & GET /\allowbreak{}products/\allowbreak{}:id; products/\allowbreak{}[id]/\allowbreak{}page.tsx; pricing.ts & products.int-spec.ts; pricing.spec.ts; E2E-T01 \\
+\addlinespace[2pt]
+FR-04..06 & UC-02 /\allowbreak{} US-05 & activity-checkout & web/\allowbreak{}lib/\allowbreak{}cart.ts; cart/\allowbreak{}page.tsx & CART-T01..05; E2E-T01 reload \\
+\addlinespace[2pt]
+FR-07,08 & UC-03 /\allowbreak{} US-07 & usecase-system; class-domain & auth.controller/\allowbreak{}service.ts; POST /\allowbreak{}auth/\allowbreak{}register, /\allowbreak{}auth/\allowbreak{}login & auth.int-spec.ts; E2E-T01,02 \\
+\addlinespace[2pt]
+FR-09,10 & UC-03,04 /\allowbreak{} US-06,07 & sequence-checkout & auth/\allowbreak{}guards.ts; order.dto.ts; bootstrap.ts & INT-T01,02,06,07; PAY-T07 \\
+\addlinespace[2pt]
+FR-11 & UC-04 /\allowbreak{} US-10 & class-domain; sequence-checkout & promotions.service.ts; POST /\allowbreak{}promotions/\allowbreak{}validate & promotion-rules.spec.ts; INT-T04; PAY-T01 \\
+\addlinespace[2pt]
+FR-12 & UC-04 /\allowbreak{} US-06 & sequence-checkout; class-domain & orders.service.ts; POST /\allowbreak{}orders & INT-T03,04,05,09; E2E-T01 \\
+\addlinespace[2pt]
+FR-13,14 & UC-04 /\allowbreak{} US-08 & sequence-checkout; state-order & payments.service.ts; POST /\allowbreak{}payments; checkout/\allowbreak{}page.tsx & PAY-T01,05,07,10; E2E-T01,02 \\
+\addlinespace[2pt]
+FR-15,16 & UC-05 /\allowbreak{} US-09 & activity-checkout; class-domain & GET /\allowbreak{}orders/\allowbreak{}me, /\allowbreak{}orders/\allowbreak{}:id; web/\allowbreak{}app/\allowbreak{}orders & INT-T06,07; E2E-T01 \\
+\addlinespace[2pt]
+FR-17 & UC-06 /\allowbreak{} US-10 & state-order; class-domain & order-state-machine.ts; PATCH /\allowbreak{}orders/\allowbreak{}:id/\allowbreak{}status; web/\allowbreak{}app/\allowbreak{}staff & order-state-machine.spec.ts; INT-T07 \\
+\addlinespace[2pt]
+FR-18 & UC-04 /\allowbreak{} US-10 & sequence-checkout & orders.service.ts createInTx; Prisma Product.version & INT-T09: 20 concurrent requests /\allowbreak{} 5 stock and qty=2 \\
+\addlinespace[2pt]
+FR-19 & UC-04 /\allowbreak{} US-10 & class-domain; sequence-checkout & loyalty.ts; Payment finalize & loyalty.spec.ts; PAY-T01,02,08 \\
+\addlinespace[2pt]
+FR-20 & UC-04,06 /\allowbreak{} US-10 & state-order & POST /\allowbreak{}orders/\allowbreak{}:id/\allowbreak{}cancel; orders.service.ts transition & INT-T08; PAY-T08,09 \\
+\addlinespace[2pt]
+FR-21 & UC-04 /\allowbreak{} US-08,10 & sequence-checkout & payments.service.ts pay/\allowbreak{}replay; UNIQUE Payment.idempotencyKey & PAY-T02,03,04,06 \\
+\addlinespace[2pt]
+FR-22,23 & Ngoài MVP /\allowbreak{} backlog & usecase-system & Không hiện thực cổng thật hoặc push notification & Không áp dụng nghiệm thu MVP \\
+\addlinespace[2pt]
+NFR-01 & Hiệu năng & deployment & GET /\allowbreak{}products & tools/\allowbreak{}measure-performance.mjs; quality/\allowbreak{}performance.json \\
+\addlinespace[2pt]
+NFR-02 & Bảo mật & deployment; sequence-checkout & bcrypt/\allowbreak{}JWT/\allowbreak{}DTO; Compose DB private & auth.int-spec.ts; INT-T01,02,06,07; PAY-T07 \\
+\addlinespace[2pt]
+NFR-03,05 & Khả dụng và tái lập & deployment & GET /\allowbreak{}health; Dockerfiles; migrations; Compose & Compose health và build; migration reset integration \\
+\addlinespace[2pt]
+NFR-04,08 & Mobile và truy cập & activity-checkout & web/\allowbreak{}globals.css; labels/\allowbreak{}form/\allowbreak{}error & E2E desktop + mobile; screenshot kiểm tra bố cục \\
+\addlinespace[2pt]
+NFR-06 & Quality gate & deployment CI & ci.yml; branch protection main & Actions runs/\allowbreak{}PR được liên kết trong verification.md \\
+\addlinespace[2pt]
+NFR-07 & Production & deployment production & delivery.yml; deploy.sh; compose production & Cần host/\allowbreak{}domain, secrets, URL thật và smoke trước khi Done \\
+\addlinespace[2pt]
+NFR-09 & PWA & deployment browser & manifest.webmanifest; sw.js; offline.html & Kiểm tra tệp và service worker; cài đặt cần HTTPS/\allowbreak{}localhost \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\section{Checklist bàn giao theo rubric}
+
+\subsection{Assignment 1}
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.14\linewidth} >{\raggedright\arraybackslash}p{0.36\linewidth} >{\raggedright\arraybackslash}p{0.44\linewidth}@{}}
+\toprule
+\textbf{Task} & \textbf{Tạo phẩm} & \textbf{Trạng thái} \\
+\midrule\endhead
+1 & Monorepo Next/\allowbreak{}Nest, env mẫu, README, Git & Có mã nguồn và lịch sử \\
+\addlinespace[2pt]
+2 & GET /\allowbreak{}products từ PostgreSQL seed & Có API và integration test \\
+\addlinespace[2pt]
+3 & Menu mobile loading/\allowbreak{}empty/\allowbreak{}error & Có UI và component test \\
+\addlinespace[2pt]
+4 & Chi tiết, size/\allowbreak{}topping, tính giá & Có UI, pricing test và E2E \\
+\addlinespace[2pt]
+5 & Giỏ thêm/\allowbreak{}sửa/\allowbreak{}xóa, badge/\allowbreak{}tổng, persist & Có store test và E2E reload \\
+\addlinespace[2pt]
+6 & POST /\allowbreak{}orders DTO, PENDING & Có transaction và integration test \\
+\addlinespace[2pt]
+7 & JWT register/\allowbreak{}login bcrypt guard & Có integration test phân quyền \\
+\addlinespace[2pt]
+8 & Ví/\allowbreak{}Thẻ mock PAID/\allowbreak{}PAYMENT\_FAILED & Có success/\allowbreak{}failure/\allowbreak{}retry test \\
+\addlinespace[2pt]
+9 & Xác nhận/\allowbreak{}lịch sử/\allowbreak{}Compose/\allowbreak{}README/\allowbreak{}demo & Có mã nguồn, Docker và kịch bản demo trực tiếp \\
+\addlinespace[2pt]
+10 & State/\allowbreak{}idempotency/\allowbreak{}kho đồng thời/\allowbreak{}promo/\allowbreak{}loyalty & Có unit và integration chứng minh \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{Assignment 2}
+\begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.14\linewidth} >{\raggedright\arraybackslash}p{0.36\linewidth} >{\raggedright\arraybackslash}p{0.44\linewidth}@{}}
+\toprule
+\textbf{Task} & \textbf{Tạo phẩm} & \textbf{Trạng thái} \\
+\midrule\endhead
+1 & context-and-scope, SRS MoSCoW, use case & docs/\allowbreak{}requirements và use-case diagrams \\
+\addlinespace[2pt]
+2 & Activity/\allowbreak{}sequence/\allowbreak{}class, nguồn và kết xuất & docs/\allowbreak{}diagrams .puml/\allowbreak{}.svg/\allowbreak{}.png \\
+\addlinespace[2pt]
+3 & Architecture, ADR, deployment diagram & Có thiết kế; production topology cần cập nhật host thật \\
+\addlinespace[2pt]
+4 & Repo, backlog, menu MVP, CI, merge gate & Repo/\allowbreak{}PR/\allowbreak{}Actions và Scrum docs; xem verification.md \\
+\addlinespace[2pt]
+5 & End-to-end, tests, Compose, images/\allowbreak{}CD, production, release & Phần local/\allowbreak{}test/\allowbreak{}CI có bằng chứng; production cần host/\allowbreak{}domain/\allowbreak{}secrets và URL hoạt động \\
+\addlinespace[2pt]
+\bottomrule\end{longtable}\endgroup
+
+\subsection{Thông tin nhóm cần bổ sung trước nộp}
+\begin{itemize}
+\item Điền nhóm, lớp, thành viên/\allowbreak{}MSSV trong report/\allowbreak{}thong-tin.tex; xác nhận tên GVHD theo mẫu.
+\item Tổ chức demo/\allowbreak{}Review với giảng viên, ghi feedback và vai trò Scrum thực.
+\item Cung cấp môi trường production, deploy, cập nhật URL frontend/\allowbreak{}API/\allowbreak{}health và sơ đồ thực tế.
+\item Có thể bổ sung video quay demo nếu không chọn demo trực tiếp.
+\end{itemize}
+
+Theo đề A2, thiếu URL production hoạt động thì phần triển khai Task 5 chưa được tính hoàn thành. Báo cáo và repository giữ rõ giới hạn này.
+
+
+\chapter{Tài liệu tham khảo}
+
+\section{Tài liệu tham khảo}
+
+\begin{enumerate}
+\item Đề BrewLite Công nghệ Phần mềm, version 1.0, Đại học Sài Gòn, HK I 2026–2027, file BrewLite-CongNghePhanMem.pdf do người học cung cấp.
+\item Đề BrewLite Assignment 2 Requirements to Deployment, version 1.0, SGU, file Assignment2-BrewLite.pdf do người học cung cấp.
+\item Mẫu Assignment\_report.tex và logo trong Assigment\_template\_SGU được cung cấp cùng đề; dùng bố cục nhận diện SGU, cập nhật học kỳ/\allowbreak{}năm học theo đề mới.
+\item Next.js Route Handlers: \url{https://nextjs.org/docs/app/api-reference/file-conventions/route} — tham khảo Web Request/\allowbreak{}Response và Promise params; triển khai thực tế kiểm tra với Next 15.5.29 đã khóa trong package-lock.
+\item Docker Compose startup order: \url{https://docs.docker.com/compose/how-tos/startup-order/} — healthcheck và condition service\_healthy.
+\item PlantUML: \url{https://plantuml.com/} — nguồn UML và local renderer 1.2026.2.
+\item Prisma transactions: \url{https://www.prisma.io/docs/orm/prisma-client/queries/transactions} — transaction, optimistic concurrency và idempotency.
+\item GitHub Actions: \url{https://docs.github.com/en/actions} — pipeline và registry; file workflow trong repo là thiết kế triển khai cụ thể.
+\end{enumerate}
+
+Tham khảo ngày 06/\allowbreak{}11/\allowbreak{}2026. Không sao chép lời mô tả thư viện làm minh chứng hệ thống đã deploy; kết quả thực nghiệm được lưu ở quality/\allowbreak{}verification.md.
+
+
+\end{document}
