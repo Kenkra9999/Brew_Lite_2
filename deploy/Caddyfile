@@ -1,0 +1,12 @@
+{$DOMAIN} {
+  encode zstd gzip
+  handle_path /backend/* {
+    reverse_proxy api:3001
+  }
+  handle {
+    reverse_proxy web:3000
+  }
+  log {
+    output stdout
+  }
+}

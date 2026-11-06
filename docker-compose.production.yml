@@ -1,0 +1,49 @@
+name: brewlite-production
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_DB: ${POSTGRES_DB:?required}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      retries: 15
+    restart: unless-stopped
+  api:
+    image: ${IMAGE_PREFIX:?required}-api:${IMAGE_TAG:?required}
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?required}
+      JWT_SECRET: ${JWT_SECRET:?required}
+      NODE_ENV: production
+      PORT: 3001
+      CORS_ORIGIN: https://${DOMAIN:?required}
+      RUN_MIGRATIONS: 'false'
+      SEED_ON_START: 'false'
+    depends_on:
+      db: {condition: service_healthy}
+    restart: unless-stopped
+  web:
+    image: ${IMAGE_PREFIX:?required}-web:${IMAGE_TAG:?required}
+    environment:
+      API_INTERNAL_URL: http://api:3001
+    depends_on:
+      api: {condition: service_healthy}
+    restart: unless-stopped
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      DOMAIN: ${DOMAIN:?required}
+    ports: ['80:80', '443:443']
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web, api]
+    restart: unless-stopped
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

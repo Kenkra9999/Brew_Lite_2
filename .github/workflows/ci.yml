@@ -1,0 +1,67 @@
+name: Quality Gate
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: brewlite
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: brewlite_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U brewlite -d brewlite_test"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+    env:
+      DATABASE_URL: postgresql://brewlite:ci-only-password@localhost:5432/brewlite_test?schema=public
+      JWT_SECRET: ci-only-secret-not-for-production-123456
+      API_INTERNAL_URL: http://localhost:3001
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --runInBand
+      - run: npm run test:int
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Start real servers and wait for health
+        shell: bash
+        run: |
+          npm run db:seed
+          NODE_ENV=test node apps/api/dist/main.js > api.log 2>&1 &
+          node node_modules/next/dist/bin/next start apps/web -p 3000 > web.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3001/health && curl -fsS http://localhost:3000/api/products > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat api.log web.log
+          exit 1
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quality-evidence
+          path: |
+            tests/playwright-report
+            tests/test-results
+            api.log
+            web.log
+          retention-days: 14
