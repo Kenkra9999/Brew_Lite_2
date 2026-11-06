@@ -121,26 +121,41 @@ export class PaymentsService {
       result = { success: false, transactionRef: null, failureReason: 'GATEWAY_UNAVAILABLE' };
     }
 
+    // Retry finalization using the already obtained gateway result, never charge again.
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await this.finalize(payment, result);
+        break;
+      } catch (err) {
+        const transient = err instanceof Prisma.PrismaClientKnownRequestError && ['P2028', 'P2034'].includes(err.code);
+        if (!transient || attempt >= 2) throw err;
+        await sleep(100 * (attempt + 1));
+      }
+    }
+    this.logger.log(`Payment ${payment.id} order=${payment.orderId} ${result.success ? 'SUCCEEDED' : 'FAILED'}`);
+    return this.outcome(payment.id, false);
+  }
+
+  private async finalize(payment: Payment, result: ChargeResult): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "Order" WHERE "id" = ${payment.orderId} FOR UPDATE`;
       const order = await this.orders.getRef(tx, payment.orderId);
-      await tx.payment.update({
-        where: { id: payment.id },
+      const { count } = await tx.payment.updateMany({
+        where: { id: payment.id, status: PaymentStatus.PROCESSING },
         data: {
           status: result.success ? PaymentStatus.SUCCEEDED : PaymentStatus.FAILED,
           transactionRef: result.transactionRef,
           failureReason: result.failureReason,
         },
       });
+      if (count === 0) return;
       if (result.success) {
-        const paid = await this.orders.transition(tx, order, OrderStatus.PAID, `Thanh toán ${dto.method} thành công`);
+        const paid = await this.orders.transition(tx, order, OrderStatus.PAID, `Thanh toán ${payment.method} thành công`);
         await this.loyalty.awardForOrder(tx, paid);
       } else {
         await this.orders.transition(tx, order, OrderStatus.PAYMENT_FAILED, `Thanh toán thất bại: ${result.failureReason}`);
       }
     });
-    this.logger.log(`Payment ${payment.id} order=${payment.orderId} ${result.success ? 'SUCCEEDED' : 'FAILED'}`);
-    return this.outcome(payment.id, false);
   }
 
   private async replay(existing: Payment, requestHash: string): Promise<PaymentOutcome> {

@@ -3,7 +3,7 @@
 skinparam defaultFontName Arial
 skinparam shadowing false
 skinparam backgroundColor white
-left to right direction
+top to bottom direction
 node "Customer device" as Client {
 artifact "Browser / installed PWA" as Browser
 }

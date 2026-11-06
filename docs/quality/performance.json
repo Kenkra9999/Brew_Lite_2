@@ -1,0 +1,15 @@
+{
+  "at": "2026-11-06T14:53:07.086Z",
+  "node": "v24.16.0",
+  "platform": "win32",
+  "samples": 100,
+  "concurrency": 1,
+  "warmup": 5,
+  "endpoint": "/products",
+  "p50ms": 4.02,
+  "p95ms": 5.92,
+  "maxMs": 7.29,
+  "targetP95ms": 500,
+  "passed": true,
+  "note": "Local warm sequential test on seed data, not a production SLA or load test."
+}

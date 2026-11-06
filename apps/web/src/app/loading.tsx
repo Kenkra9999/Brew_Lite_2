@@ -1,2 +1,2 @@
-import {Loading} from '@/components/shell';
+import { Loading } from "@/components/shell";
 export default Loading;

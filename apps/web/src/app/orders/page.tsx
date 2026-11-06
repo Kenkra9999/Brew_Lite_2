@@ -1,6 +1,58 @@
-'use client';
-import Link from 'next/link';
-import {useAuth,ErrorNotice,Loading} from '@/components/shell';
-import {useResource} from '@/lib/hooks';
-import {money,statusLabel,type Order} from '@/lib/types';
-export default function Orders(){const {user}=useAuth();const {data,error,loading,reload}=useResource<Order[]>(user?'/orders/me':null);return <div className="page narrow"><span className="eyebrow muted">NHỮNG LẦN GHÉ BREWLITE</span><h1>Đơn hàng của tôi</h1>{!user?<div className="empty"><h2>Đăng nhập để xem đơn của bạn</h2><Link className="button" href="/auth">Đăng nhập</Link></div>:loading?<Loading/>:error?<ErrorNotice message={error} retry={reload}/>:!data?.length?<div className="empty"><h2>Chưa có đơn hàng nào</h2><Link className="button" href="/">Chọn ly đầu tiên</Link></div>:<div className="order-list">{data.map(o=><Link className="order-card" key={o.id} href={'/orders/'+o.id}><div><b>Đơn {o.code}</b><span className={'status '+o.status.toLowerCase()}>{statusLabel[o.status]||o.status}</span></div><p>{o.items.map(i=>i.productName+' '+i.size+' ×'+i.qty).join(', ')}</p><div><small>{new Date(o.createdAt).toLocaleString('vi-VN')}</small><strong>{money(o.total)} →</strong></div></Link>)}</div>}</div>;}
+"use client";
+import Link from "next/link";
+import { useAuth, ErrorNotice, Loading } from "@/components/shell";
+import { useResource } from "@/lib/hooks";
+import { money, statusLabel, type Order } from "@/lib/types";
+export default function Orders() {
+  const { user } = useAuth();
+  const { data, error, loading, reload } = useResource<Order[]>(
+    user ? "/orders/me" : null,
+  );
+  return (
+    <div className="page narrow">
+      <span className="eyebrow muted">NHỮNG LẦN GHÉ BREWLITE</span>
+      <h1>Đơn hàng của tôi</h1>
+      {!user ? (
+        <div className="empty">
+          <h2>Đăng nhập để xem đơn của bạn</h2>
+          <Link className="button" href="/auth">
+            Đăng nhập
+          </Link>
+        </div>
+      ) : loading ? (
+        <Loading />
+      ) : error ? (
+        <ErrorNotice message={error} retry={reload} />
+      ) : !data?.length ? (
+        <div className="empty">
+          <h2>Chưa có đơn hàng nào</h2>
+          <Link className="button" href="/">
+            Chọn ly đầu tiên
+          </Link>
+        </div>
+      ) : (
+        <div className="order-list">
+          {data.map((o) => (
+            <Link className="order-card" key={o.id} href={"/orders/" + o.id}>
+              <div>
+                <b>Đơn {o.code}</b>
+                <span className={"status " + o.status.toLowerCase()}>
+                  {statusLabel[o.status] || o.status}
+                </span>
+              </div>
+              <p>
+                {o.items
+                  .map((i) => i.productName + " " + i.size + " ×" + i.qty)
+                  .join(", ")}
+              </p>
+              <div>
+                <small>{new Date(o.createdAt).toLocaleString("vi-VN")}</small>
+                <strong>{money(o.total)} →</strong>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

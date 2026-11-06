@@ -1,18 +1,369 @@
-'use client';
-import Link from 'next/link';
-import {useRouter} from 'next/navigation';
-import {useEffect,useRef,useState} from 'react';
-import {api,ApiError} from '@/lib/api';
-import {useCart,cartTotal} from '@/lib/cart';
-import {useReady} from '@/lib/hooks';
-import {money,type Order} from '@/lib/types';
-import {useAuth,ErrorNotice,Loading} from '@/components/shell';
-type Pending={orderId:number;key:string;method:'WALLET'|'CARD';fingerprint:string};
-const storage='brewlite-pending';
-export default function Checkout(){const {user,refresh}=useAuth();const {items,clear}=useCart();const ready=useReady(),router=useRouter();const [method,setMethod]=useState<'WALLET'|'CARD'>('WALLET'),[card,setCard]=useState(''),[promo,setPromo]=useState(''),[note,setNote]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[pending,setPending]=useState<Pending|null>(null),[uncertainOrder,setUncertainOrder]=useState(false);const lock=useRef(false);const fingerprint=JSON.stringify(items.map(i=>[i.key,i.qty]));
-useEffect(()=>{try{const p=JSON.parse(sessionStorage.getItem(storage)||'null') as Pending|null;setPending(p);if(p?.key)setMethod(p.method);}catch{sessionStorage.removeItem(storage);}},[]);
-function save(p:Pending|null){setPending(p);if(p)sessionStorage.setItem(storage,JSON.stringify(p));else sessionStorage.removeItem(storage);}
-async function cancel(){if(!pending||lock.current)return;lock.current=true;setBusy(true);try{await api(`/orders/${pending.orderId}/cancel`,{method:'POST'});save(null);setError('');}catch(e){setError((e as Error).message);}finally{lock.current=false;setBusy(false);}}
-async function pay(e:React.FormEvent){e.preventDefault();if(lock.current)return;lock.current=true;setBusy(true);setError('');let p=pending;try{if(!p){let order:Order;try{order=await api<Order>('/orders',{method:'POST',body:JSON.stringify({items:items.map(i=>({productId:i.productId,size:i.size,qty:i.qty,toppingIds:i.toppings.map(t=>t.id)})),...(promo.trim()?{promoCode:promo.trim()}:{}),note})});}catch(e){if(e instanceof ApiError&&(e.status===0||e.status>=500))setUncertainOrder(true);throw e;}p={orderId:order.id,key:'',method,fingerprint};save(p);}const existing=await api<Order>('/orders/'+p.orderId);if(['PAID','PREPARING','READY','COMPLETED'].includes(existing.status)){clear();save(null);router.push('/orders/'+existing.id);return;}if(existing.status==='CANCELLED'){save(null);throw new Error('Đơn đã hủy. Bạn có thể tạo đơn mới.');}if(!p.key){p={...p,key:crypto.randomUUID(),method};save(p);}const outcome=await api<{order:Order;payment:{status:string;failureReason:string}}>('/payments',{method:'POST',headers:{'Idempotency-Key':p.key},body:JSON.stringify({orderId:p.orderId,method:p.method,...(p.method==='CARD'?{cardNumber:card}:{})})});if(outcome.payment.status==='SUCCEEDED'){clear();save(null);await refresh();router.push('/orders/'+outcome.order.id);}else{save({...p,key:''});setError('Thanh toán bị từ chối ('+outcome.payment.failureReason+'). Giỏ hàng được giữ nguyên. Hãy thử lại trên đơn này.');}}catch(e){if(e instanceof ApiError&&e.status===400&&p)save({...p,key:''});setError((e as Error).message);}finally{lock.current=false;setBusy(false);}}
-if(!ready)return <Loading/>;if(!items.length&&!pending)return <div className="page narrow empty"><h1>Giỏ hàng đang trống</h1><Link className="button" href="/">Chọn đồ uống</Link></div>;
-return <div className="page narrow"><Link className="back-link" href="/cart">← Quay lại giỏ</Link><span className="eyebrow muted">SẮP ĐẾN LY NGON CỦA BẠN</span><h1>Thanh toán</h1>{!user?<div className="summary"><h2>Đăng nhập để tiếp tục</h2><p>Giỏ hàng của bạn vẫn ở đây.</p><Link className="button" href="/auth?next=/checkout">Đăng nhập / Đăng ký</Link></div>:<form className="checkout-grid" onSubmit={pay}><section className="panel"><h2>Nhận tại quầy BrewLite</h2><p>Khách hàng: <b>{user.fullName}</b></p><p className="fineprint">Đây là thanh toán mô phỏng cho đồ án. Chỉ sử dụng số thẻ thử nghiệm.</p><label>Ghi chú cho tụi mình<textarea maxLength={200} placeholder="Ví dụ: ít đá, ít ngọt…" value={note} disabled={!!pending} onChange={e=>setNote(e.target.value)}/></label><label>Mã ưu đãi<input placeholder="WELCOME10 hoặc GIAM15K" maxLength={30} value={promo} disabled={!!pending} onChange={e=>setPromo(e.target.value)}/></label><fieldset><legend>Phương thức thanh toán</legend>{(['WALLET','CARD'] as const).map(m=><label className={`method ${method===m?'chosen':''}`} key={m}><input type="radio" name="method" value={m} checked={method===m} disabled={busy||!!pending?.key} onChange={()=>setMethod(m)}/><span><b>{m==='WALLET'?'Ví điện tử':'Thẻ ngân hàng'}</b><small>{m==='WALLET'?'Ví mô phỏng · tối đa 2.000.000đ/giao dịch':'Thẻ thử nghiệm, không trừ tiền thật'}</small></span></label>)}</fieldset>{method==='CARD'&&<label>Số thẻ thử nghiệm<input aria-label="Số thẻ thử nghiệm" inputMode="numeric" required pattern="[0-9 -]{16,23}" maxLength={23} autoComplete="off" placeholder="4242 4242 4242 4242" value={card} onChange={e=>setCard(e.target.value)}/><small>Thành công: 4242 4242 4242 4242 · Từ chối: 4000 0000 0000 0002</small></label>}{pending&&<div className="notice">Tiếp tục đơn #{pending.orderId}. {pending.key?'Yêu cầu trước được giữ nguyên để thử lại an toàn.':'Lần thử mới sẽ dùng khóa thanh toán mới.'} Nếu muốn sửa giỏ hoặc mã, hãy hủy đơn trước.<button type="button" disabled={busy} onClick={cancel}>Hủy đơn chưa thanh toán</button></div>}{pending&&pending.fingerprint!==fingerprint&&<ErrorNotice message="Giỏ đã thay đổi. Hủy đơn cũ trước khi tạo lại, hoặc mở đơn trong lịch sử."/>}{error&&<ErrorNotice message={error}/>}<Link href="/orders">Xem lịch sử và kiểm tra đơn →</Link></section><aside className="summary"><h2>Đơn của bạn</h2>{items.map(i=><div className="summary-line" key={i.key}><span>{i.name} {i.size} ×{i.qty}</span><b>{money(i.unitPrice*i.qty)}</b></div>)}<div className="summary-line total"><span>Tạm tính</span><strong>{money(cartTotal(items))}</strong></div><p className="fineprint">Tổng cuối cùng và ưu đãi được server tính khi tạo đơn.</p><button className="button full" disabled={busy||uncertainOrder||!!(pending&&pending.fingerprint!==fingerprint)}>{busy?'Đang xử lý, vui lòng chờ…':pending?'Tiếp tục thanh toán':'Xác nhận thanh toán →'}</button>{uncertainOrder&&<p role="alert">Chưa rõ máy chủ đã tạo đơn hay chưa. Kiểm tra lịch sử trước khi đặt lại để tránh trùng đơn.</p>}<p className="fineprint">Mỗi đơn thành công tích 1 điểm cho mỗi 10.000đ thực trả.</p></aside></form>}</div>;}
+"use client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { api, ApiError } from "@/lib/api";
+import { useCart, cartTotal } from "@/lib/cart";
+import { useReady } from "@/lib/hooks";
+import { money, type Order } from "@/lib/types";
+import { useAuth, ErrorNotice, Loading } from "@/components/shell";
+type Pending = {
+  orderId: number;
+  key: string;
+  method: "WALLET" | "CARD";
+  fingerprint: string;
+};
+const storage = "brewlite-pending";
+export default function Checkout() {
+  const { user, refresh } = useAuth();
+  const { items, clear } = useCart();
+  const ready = useReady(),
+    router = useRouter();
+  const [method, setMethod] = useState<"WALLET" | "CARD">("WALLET"),
+    [card, setCard] = useState(""),
+    [promo, setPromo] = useState(""),
+    [note, setNote] = useState(""),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false),
+    [pending, setPending] = useState<Pending | null>(null),
+    [uncertainOrder, setUncertainOrder] = useState(false),
+    [resumedOrder, setResumedOrder] = useState<Order | null>(null);
+  const lock = useRef(false);
+  const fingerprint = JSON.stringify(items.map((i) => [i.key, i.qty]));
+  useEffect(() => {
+    setUncertainOrder(
+      sessionStorage.getItem("brewlite-uncertain-order") === "true",
+    );
+    try {
+      const p = JSON.parse(
+        sessionStorage.getItem(storage) || "null",
+      ) as Pending | null;
+      setPending(p);
+      if (p?.key) setMethod(p.method);
+    } catch {
+      sessionStorage.removeItem(storage);
+    }
+  }, []);
+  useEffect(() => {
+    if (!user) return;
+    const id = new URLSearchParams(window.location.search).get("order");
+    if (!id || !/^\d+$/.test(id)) return;
+    api<Order>("/orders/" + id)
+      .then((o) => {
+        setResumedOrder(o);
+        if (["PENDING", "PAYMENT_FAILED"].includes(o.status)) {
+          const old = JSON.parse(
+            sessionStorage.getItem(storage) || "null",
+          ) as Pending | null;
+          if (old && old.orderId !== o.id) {
+            setError(
+              "Bạn đang có phiên thanh toán đơn khác. Kiểm tra hoặc hủy phiên đó trước khi đổi đơn.",
+            );
+            return;
+          }
+          const p: Pending = old || {
+            orderId: o.id,
+            key: "",
+            method: "WALLET",
+            fingerprint,
+          };
+          setPending(p);
+          sessionStorage.setItem(storage, JSON.stringify(p));
+          sessionStorage.removeItem("brewlite-uncertain-order");
+          setUncertainOrder(false);
+        } else router.replace("/orders/" + o.id);
+      })
+      .catch((e) => setError((e as Error).message));
+  }, [user, fingerprint, router]);
+  function save(p: Pending | null) {
+    setPending(p);
+    if (!p) setResumedOrder(null);
+    if (p) sessionStorage.setItem(storage, JSON.stringify(p));
+    else sessionStorage.removeItem(storage);
+  }
+  async function cancel() {
+    if (!pending || lock.current) return;
+    lock.current = true;
+    setBusy(true);
+    try {
+      await api(`/orders/${pending.orderId}/cancel`, { method: "POST" });
+      save(null);
+      setError("");
+    } catch (e) {
+      if (
+        e instanceof ApiError &&
+        (e.status === 404 ||
+          e.code === "CANCEL_NOT_ALLOWED" ||
+          e.code === "INVALID_STATUS_TRANSITION")
+      )
+        save(null);
+      setError((e as Error).message);
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+  async function pay(e: React.FormEvent) {
+    e.preventDefault();
+    if (lock.current) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    let p = pending;
+    try {
+      if (!p) {
+        let order: Order;
+        try {
+          order = await api<Order>("/orders", {
+            method: "POST",
+            body: JSON.stringify({
+              items: items.map((i) => ({
+                productId: i.productId,
+                size: i.size,
+                qty: i.qty,
+                toppingIds: i.toppings.map((t) => t.id),
+              })),
+              ...(promo.trim() ? { promoCode: promo.trim() } : {}),
+              note,
+            }),
+          });
+        } catch (e) {
+          if (e instanceof ApiError && (e.status === 0 || e.status >= 500)) {
+            setUncertainOrder(true);
+            sessionStorage.setItem("brewlite-uncertain-order", "true");
+          }
+          throw e;
+        }
+        p = { orderId: order.id, key: "", method, fingerprint };
+        save(p);
+      }
+      const existing = await api<Order>("/orders/" + p.orderId);
+      if (
+        ["PAID", "PREPARING", "READY", "COMPLETED"].includes(existing.status)
+      ) {
+        clear();
+        save(null);
+        router.push("/orders/" + existing.id);
+        return;
+      }
+      if (existing.status === "CANCELLED") {
+        save(null);
+        throw new Error("Đơn đã hủy. Bạn có thể tạo đơn mới.");
+      }
+      if (!p.key) {
+        p = { ...p, key: crypto.randomUUID(), method };
+        save(p);
+      }
+      const outcome = await api<{
+        order: Order;
+        payment: { status: string; failureReason: string };
+      }>("/payments", {
+        method: "POST",
+        headers: { "Idempotency-Key": p.key },
+        body: JSON.stringify({
+          orderId: p.orderId,
+          method: p.method,
+          ...(p.method === "CARD" ? { cardNumber: card } : {}),
+        }),
+      });
+      if (outcome.payment.status === "SUCCEEDED") {
+        clear();
+        save(null);
+        await refresh();
+        router.push("/orders/" + outcome.order.id);
+      } else {
+        save({ ...p, key: "" });
+        setError(
+          "Thanh toán bị từ chối (" +
+            outcome.payment.failureReason +
+            "). Giỏ hàng được giữ nguyên. Hãy thử lại trên đơn này.",
+        );
+      }
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 404) save(null);
+      else if (
+        e instanceof ApiError &&
+        (e.status === 400 || e.code === "IDEMPOTENCY_KEY_REUSED") &&
+        p
+      )
+        save({ ...p, key: "" });
+      setError((e as Error).message);
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+  if (!ready) return <Loading />;
+  if (!items.length && !pending)
+    return (
+      <div className="page narrow empty">
+        <h1>Giỏ hàng đang trống</h1>
+        <Link className="button" href="/">
+          Chọn đồ uống
+        </Link>
+      </div>
+    );
+  return (
+    <div className="page narrow">
+      <Link className="back-link" href="/cart">
+        ← Quay lại giỏ
+      </Link>
+      <span className="eyebrow muted">SẮP ĐẾN LY NGON CỦA BẠN</span>
+      <h1>Thanh toán</h1>
+      {!user ? (
+        <div className="summary">
+          <h2>Đăng nhập để tiếp tục</h2>
+          <p>Giỏ hàng của bạn vẫn ở đây.</p>
+          <Link className="button" href="/auth?next=/checkout">
+            Đăng nhập / Đăng ký
+          </Link>
+        </div>
+      ) : (
+        <form className="checkout-grid" onSubmit={pay}>
+          <section className="panel">
+            <h2>Nhận tại quầy BrewLite</h2>
+            <p>
+              Khách hàng: <b>{user.fullName}</b>
+            </p>
+            <p className="fineprint">
+              Đây là thanh toán mô phỏng cho đồ án. Chỉ sử dụng số thẻ thử
+              nghiệm.
+            </p>
+            <label>
+              Ghi chú cho tụi mình
+              <textarea
+                maxLength={200}
+                placeholder="Ví dụ: ít đá, ít ngọt…"
+                value={note}
+                disabled={!!pending}
+                onChange={(e) => setNote(e.target.value)}
+              />
+            </label>
+            <label>
+              Mã ưu đãi
+              <input
+                placeholder="WELCOME10 hoặc GIAM15K"
+                maxLength={30}
+                value={promo}
+                disabled={!!pending}
+                onChange={(e) => setPromo(e.target.value)}
+              />
+            </label>
+            <fieldset>
+              <legend>Phương thức thanh toán</legend>
+              {(["WALLET", "CARD"] as const).map((m) => (
+                <label
+                  className={`method ${method === m ? "chosen" : ""}`}
+                  key={m}
+                >
+                  <input
+                    type="radio"
+                    name="method"
+                    value={m}
+                    checked={method === m}
+                    disabled={busy || !!pending?.key}
+                    onChange={() => setMethod(m)}
+                  />
+                  <span>
+                    <b>{m === "WALLET" ? "Ví điện tử" : "Thẻ ngân hàng"}</b>
+                    <small>
+                      {m === "WALLET"
+                        ? "Ví mô phỏng · tối đa 2.000.000đ/giao dịch"
+                        : "Thẻ thử nghiệm, không trừ tiền thật"}
+                    </small>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+            {method === "CARD" && (
+              <label>
+                Số thẻ thử nghiệm
+                <input
+                  aria-label="Số thẻ thử nghiệm"
+                  inputMode="numeric"
+                  required
+                  pattern="[0-9 -]{16,23}"
+                  maxLength={23}
+                  autoComplete="off"
+                  placeholder="4242 4242 4242 4242"
+                  value={card}
+                  onChange={(e) => setCard(e.target.value)}
+                />
+                <small>
+                  Thành công: 4242 4242 4242 4242 · Từ chối: 4000 0000 0000 0002
+                </small>
+              </label>
+            )}
+            {pending && (
+              <div className="notice">
+                Tiếp tục đơn #{pending.orderId}.{" "}
+                {pending.key
+                  ? "Yêu cầu trước được giữ nguyên để thử lại an toàn."
+                  : "Lần thử mới sẽ dùng khóa thanh toán mới."}{" "}
+                Nếu muốn sửa giỏ hoặc mã, hãy hủy đơn trước.
+                <button type="button" disabled={busy} onClick={cancel}>
+                  Hủy đơn chưa thanh toán
+                </button>
+              </div>
+            )}
+            {pending && pending.fingerprint !== fingerprint && (
+              <ErrorNotice message="Giỏ đã thay đổi. Hủy đơn cũ trước khi tạo lại, hoặc mở đơn trong lịch sử." />
+            )}
+            {error && <ErrorNotice message={error} />}
+            <Link href="/orders">Xem lịch sử và kiểm tra đơn →</Link>
+          </section>
+          <aside className="summary">
+            <h2>Đơn của bạn</h2>
+            {resumedOrder
+              ? resumedOrder.items.map((i) => (
+                  <div className="summary-line" key={i.id}>
+                    <span>
+                      {i.productName} {i.size} ×{i.qty}
+                    </span>
+                    <b>{money(i.lineTotal)}</b>
+                  </div>
+                ))
+              : items.map((i) => (
+                  <div className="summary-line" key={i.key}>
+                    <span>
+                      {i.name} {i.size} ×{i.qty}
+                    </span>
+                    <b>{money(i.unitPrice * i.qty)}</b>
+                  </div>
+                ))}
+            <div className="summary-line total">
+              <span>Tạm tính</span>
+              <strong>{money(resumedOrder?.total ?? cartTotal(items))}</strong>
+            </div>
+            <p className="fineprint">
+              Tổng cuối cùng và ưu đãi được server tính khi tạo đơn.
+            </p>
+            <button
+              className="button full"
+              disabled={
+                busy ||
+                uncertainOrder ||
+                !!(pending && pending.fingerprint !== fingerprint)
+              }
+            >
+              {busy
+                ? "Đang xử lý, vui lòng chờ…"
+                : pending
+                  ? "Tiếp tục thanh toán"
+                  : "Xác nhận thanh toán →"}
+            </button>
+            {uncertainOrder && (
+              <p role="alert">
+                Chưa rõ máy chủ đã tạo đơn hay chưa. Kiểm tra lịch sử trước khi
+                đặt lại để tránh trùng đơn.
+              </p>
+            )}
+            <p className="fineprint">
+              Mỗi đơn thành công tích 1 điểm cho mỗi 10.000đ thực trả.
+            </p>
+          </aside>
+        </form>
+      )}
+    </div>
+  );
+}
