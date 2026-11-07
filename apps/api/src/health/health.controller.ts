@@ -29,6 +29,7 @@ export class HealthController {
       checks: { database, latencyMs: Date.now() - started },
       timestamp: new Date().toISOString(),
     };
+    console.log('health', body);
     res.status(database === 'up' ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE).json(body);
   }
 }
