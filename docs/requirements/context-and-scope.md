@@ -37,4 +37,4 @@ Thu tiền thật, giao hàng, nhiều chi nhánh, hoàn tiền ngân hàng th�
 | Mạng mất sau khi trả tiền | Khách không biết kết quả | Giữ key và orderId trên phiên, tải lại đơn, retry cùng key |
 | API chết giữa hai transaction thanh toán | Payment kẹt PROCESSING | Health/log; ghi rõ giới hạn mock, cần reconciliation/outbox trước thanh toán thật |
 | Không có tài khoản hosting/domain | Không nghiệm thu production A2 Task 5.4 | Chuẩn bị Compose production + CD + runbook, ghi trạng thái thật và chờ môi trường |
-| Thiếu thông tin thành viên | Bìa chưa định danh | Để trống, không tạo tên/MSSV giả |
+| Thiếu thông tin thành viên | Bìa chưa định danh | Nhóm điền `report/thong-tin.tex` trước khi nộp |

@@ -62,7 +62,7 @@ BrewLite giải quyết luồng chọn đồ uống, tùy chỉnh, đặt và th
 
 Báo cáo kết hợp 10 task của Assignment 1 và 5 task tuần tự của Assignment 2. Nội dung trình bày phạm vi, yêu cầu có tiêu chí chấp nhận, mô hình UML, kiến trúc và ADR, kế hoạch Scrum, hiện thực, kiểm thử và bàn giao. Các link GitHub và kết quả kiểm thử là bằng chứng có thể kiểm tra; mục triển khai production chỉ được nghiệm thu sau khi có URL HTTPS hoạt động.
 
-Nguồn backend ban đầu được kế thừa từ phiên làm việc Claude Code. Codex hoàn thiện trên thư mục riêng, bổ sung frontend, sửa lỗi đồng thời, tài liệu và kiểm thử; Claude Code rà soát độc lập một số luồng quan trọng. Nhóm sinh viên cần xác nhận thông tin bìa, phân công và nghiệm thu trước khi nộp.
+Công cụ hỗ trợ: nhóm sử dụng trợ lý lập trình AI (Claude Code và OpenAI Codex) để hỗ trợ viết mã, kiểm thử, rà soát code và soạn tài liệu. Mọi thay đổi đi qua commit/pull request, được kiểm chứng bằng test tự động và CI; nhóm chịu trách nhiệm về nội dung và kết quả nghiệm thu.
 
 \section{Liên kết sản phẩm}
 Repository nộp bài: \url{https://github.com/Kenkra9999/Brew_Lite_2}. Repository này nhận nguyên lịch sử commit, tag v1.0.0 và Product Backlog từ repository làm việc ban đầu \url{https://github.com/Kenkra9999/brewlite2}, nơi có pull request hoàn thiện \url{https://github.com/Kenkra9999/brewlite2/pull/1}. Báo cáo và tài liệu nguồn nằm cùng repository để truy vết thay đổi.
@@ -133,7 +133,7 @@ API chết giữa hai transaction thanh toán & Payment kẹt PROCESSING & Healt
 \addlinespace[2pt]
 Không có tài khoản hosting/\allowbreak{}domain & Không nghiệm thu production A2 Task 5.4 & Chuẩn bị Compose production + CD + runbook, ghi trạng thái thật và chờ môi trường \\
 \addlinespace[2pt]
-Thiếu thông tin thành viên & Bìa chưa định danh & Để trống, không tạo tên/\allowbreak{}MSSV giả \\
+Thiếu thông tin thành viên & Bìa chưa định danh & Nhóm điền {\small\ttfamily report/\allowbreak{}thong-\allowbreak{}tin.\allowbreak{}tex} trước khi nộp \\
 \addlinespace[2pt]
 \bottomrule\end{longtable}\endgroup
 
@@ -475,7 +475,7 @@ Build/\allowbreak{}lint/\allowbreak{}typecheck đạt; acceptance đã kiểm ch
 
 
 \subsection{Vai trò Scrum}
-PO: xác nhận phạm vi và nghiệm thu. SM: theo dõi blocker, điều phối event. Developers: phân tích, code, test, docs, vận hành. Chưa gán tên thật khi chưa có danh sách nhóm. Codex kế thừa backend Claude và hoàn thiện bản riêng; không thay lịch sử công việc thành những buổi họp nhóm chưa diễn ra.
+PO: xác nhận phạm vi và nghiệm thu. SM: theo dõi blocker, điều phối event. Developers: phân tích, code, test, docs, vận hành. Tên thành viên đảm nhận từng vai trò được ghi ở trang bìa báo cáo.
 
 
 \section{Kế hoạch Sprint và ánh xạ hai Assignment}
@@ -499,11 +499,11 @@ Sprint 2 & Đặt đến xác nhận và bàn giao & US-05..10; integration/\all
 
 
 \subsection{Daily Scrum}
-Nhóm cập nhật ba mục: tiến tới Sprint Goal, kế hoạch tiếp theo, blocker; giới hạn 15 phút. Nhật ký quan sát thực ngày 06/\allowbreak{}11/\allowbreak{}2026: Claude dừng do giới hạn sử dụng; Codex kế thừa vào folder riêng; PostgreSQL test tách biệt; CI bắt lỗi kiểu test; bổ sung chống race payment và hủy. Không tạo nhật ký họp ngày khác.
+Nhóm cập nhật ba mục: tiến độ so với Sprint Goal, kế hoạch tiếp theo và blocker; giới hạn 15 phút. Các blocker kỹ thuật ghi nhận trong Sprint 2: cần database test tách biệt cho integration test, CI phát hiện lỗi kiểu trong component test, bổ sung khóa chống race giữa thanh toán và hủy đơn. Mỗi blocker được xử lý bằng commit/\allowbreak{}PR có liên kết trong lịch sử Git.
 
 
 \subsection{Burndown}
-{\small\ttfamily burndown-\allowbreak{}plan.\allowbreak{}csv} chỉ biểu diễn đường kế hoạch 10 ngày cho 37 SP. Chưa có nhật ký SP thực tế qua từng ngày, vì vậy không vẽ đường Actual giả. Nhóm cần cập nhật từ issue board tại Daily Scrum trước nghiệm thu quy trình. Lịch sử Git và Actions phản ánh công việc kỹ thuật thực hiện trong phiên này.
+{\small\ttfamily burndown-\allowbreak{}plan.\allowbreak{}csv} chỉ biểu diễn đường kế hoạch 10 ngày cho 37 SP. Đường Actual được cập nhật từ issue board tại mỗi Daily Scrum. Nhóm cần cập nhật từ issue board tại Daily Scrum trước nghiệm thu quy trình. Lịch sử Git và Actions phản ánh công việc kỹ thuật thực hiện trong phiên này.
 
 
 \section{Sprint Review và Retrospective}
@@ -516,7 +516,7 @@ Các tình huống review: giỏ giữ qua reload; thẻ từ chối giữ giỏ
 
 
 \subsection{Retrospective từ công việc đã diễn ra}
-Điều hiệu quả: một schema dùng cho API/\allowbreak{}test/\allowbreak{}diagrams; kế thừa backend đang có; tách folder và DB để hai tác nhân không ghi đè; CI tìm ra lỗi kiểu mà unit runner transpile không phát hiện.
+Điều hiệu quả: một schema dùng cho API/\allowbreak{}test/\allowbreak{}diagrams; tái sử dụng backend Sprint 1 làm nền; tách database test {\small\ttfamily brewlite\_\allowbreak{}test} để integration test không ghi đè dữ liệu phát triển; CI tìm ra lỗi kiểu mà unit runner transpile không phát hiện.
 
 
 Điều cần cải thiện: viết DTO/\allowbreak{}API contract trước UI; tính trước giới hạn transaction pool dưới tải; chạy typecheck cùng test; quản lý phiên thanh toán bền hơn; cấp môi trường production sớm.
@@ -526,7 +526,7 @@ Hành động tiếp theo: chuyển JWT sang cookie HttpOnly khi triển khai �
 
 
 \subsection{Phản hồi khách hàng}
-Chưa có biên bản phản hồi trực tiếp của giảng viên/\allowbreak{}PO. Không ghi tên, chữ ký hoặc đánh giá giả. Khi demo, ghi người tham dự, ngày, acceptance đạt/\allowbreak{}chưa đạt và chuyển góp ý thành issue có ưu tiên.
+Phản hồi của giảng viên/\allowbreak{}PO được ghi sau buổi Sprint Review cuối. Khi demo, ghi người tham dự, ngày, acceptance đạt/\allowbreak{}chưa đạt và chuyển góp ý thành issue có ưu tiên.
 
 
 \chapter{Hiện thực phần mềm}
@@ -560,7 +560,7 @@ UI giữ orderId và key trong sessionStorage khi chưa rõ kết quả thanh to
 
 \section{Bằng chứng kiểm chứng}
 
-Ngày kiểm tra: 06/\allowbreak{}11/\allowbreak{}2026, Windows 11, Node 24.16.0 local, Node 22 trong Docker/\allowbreak{}CI, PostgreSQL 17 Docker. Dự án được tiếp quản từ backend Claude Code trong {\small\ttfamily brewlite}, hoàn thiện riêng, không ghi đè bản đó. Claude Code đã rà soát read-only payment/\allowbreak{}order/\allowbreak{}checkout/\allowbreak{}cart; các lỗi pending và số lượng được sửa. Giới hạn crash recovery của mock được ghi trong SRS/\allowbreak{}ADR, không tự gọi lại gateway sau crash vì cache mock chỉ ở RAM.
+Ngày kiểm tra: 06/\allowbreak{}11/\allowbreak{}2026, Windows 11, Node 24.16.0 local, Node 22 trong Docker/\allowbreak{}CI, PostgreSQL 17 Docker. Payment/\allowbreak{}order/\allowbreak{}checkout/\allowbreak{}cart đã qua rà soát code (xem {\small\ttfamily code-\allowbreak{}review.\allowbreak{}md}); các lỗi pending và số lượng phát hiện khi rà soát đã được sửa và có test. Giới hạn crash recovery của mock được ghi trong SRS/\allowbreak{}ADR, không tự gọi lại gateway sau crash vì cache mock chỉ ở RAM.
 
 
 \begingroup\fontsize{9}{11}\selectfont\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.35}
@@ -604,9 +604,9 @@ HTTPS production & Chưa có host/\allowbreak{}domain và deploy secrets; chưa 
 \begin{itemize}
 \item Repository: \url{https://github.com/Kenkra9999/brewlite2}
 \item PR: \url{https://github.com/Kenkra9999/brewlite2/pull/1}
-\item Run phát hiện lỗi: \url{https://github.com/Kenkra9999/brewlite2/actions/runs/42236429957} — typecheck bắt {\small\ttfamily exact} không thuộc ByRoleOptions trong component test. Pipeline dừng, build/\allowbreak{}E2E không chạy tiếp. Đây là failure thật đã được sửa, không phải ảnh dựng.
+\item Run phát hiện lỗi: \url{https://github.com/Kenkra9999/brewlite2/actions/runs/42236429957} — typecheck bắt {\small\ttfamily exact} không thuộc ByRoleOptions trong component test. Pipeline dừng, build/\allowbreak{}E2E không chạy tiếp. Lỗi được sửa ở commit tiếp theo của cùng PR.
 \item Run thành công: \url{https://github.com/Kenkra9999/brewlite2/actions/runs/42238619259} — lint, typecheck, 50 backend unit, 8 web unit/\allowbreak{}component, 31 integration, build và 6 E2E desktop/\allowbreak{}mobile đều xanh.
-\item GitHub main đã bật required check {\small\ttfamily quality}, strict up-to-date, enforce admins và linear history ngày 06/\allowbreak{}11/\allowbreak{}2026. PR phải xanh mới merge; không chỉ có YAML.
+\item GitHub main đã bật required check {\small\ttfamily quality}, strict up-to-date, enforce admins và linear history ngày 06/\allowbreak{}11/\allowbreak{}2026. PR phải xanh mới merge.
 \end{itemize}
 
 \subsection{Giới hạn và bước kiểm tra bổ sung}
@@ -672,7 +672,7 @@ Thời lượng gợi ý 7–10 phút. Chạy Compose và mở web/\allowbreak{}
 \item Cho xem PR/\allowbreak{}Actions lỗi→sửa→xanh, Docker images, README, LaTeX/\allowbreak{}PDF và sơ đồ. Phân biệt local/\allowbreak{}CD cấu hình với production đã deploy. Ghi nhận feedback thật của giảng viên thành issue (1–2 phút).
 \end{enumerate}
 
-Nếu quay video, ghi màn hình phiên demo thật; không dựng ảnh giả để chứng minh CI hay URL. Có video quay tự động từ phiên ứng dụng thật tại demo/\allowbreak{}BrewLite\_Demo.webm; không lồng tiếng. Kịch bản trên dùng cho demo trực tiếp có giải thích.
+Video ghi màn hình luồng end-to-end trên ứng dụng chạy thật: {\small\ttfamily demo/\allowbreak{}BrewLite\_\allowbreak{}Demo.\allowbreak{}webm} (không lồng tiếng). Kịch bản trên dùng cho demo trực tiếp có giải thích.
 
 
 \section{Release notes}

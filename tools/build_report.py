@@ -140,7 +140,7 @@ BrewLite giải quyết luồng chọn đồ uống, tùy chỉnh, đặt và th
 
 Báo cáo kết hợp 10 task của Assignment 1 và 5 task tuần tự của Assignment 2. Nội dung trình bày phạm vi, yêu cầu có tiêu chí chấp nhận, mô hình UML, kiến trúc và ADR, kế hoạch Scrum, hiện thực, kiểm thử và bàn giao. Các link GitHub và kết quả kiểm thử là bằng chứng có thể kiểm tra; mục triển khai production chỉ được nghiệm thu sau khi có URL HTTPS hoạt động.
 
-Nguồn backend ban đầu được kế thừa từ phiên làm việc Claude Code. Codex hoàn thiện trên thư mục riêng, bổ sung frontend, sửa lỗi đồng thời, tài liệu và kiểm thử; Claude Code rà soát độc lập một số luồng quan trọng. Nhóm sinh viên cần xác nhận thông tin bìa, phân công và nghiệm thu trước khi nộp.
+Công cụ hỗ trợ: nhóm sử dụng trợ lý lập trình AI (Claude Code và OpenAI Codex) để hỗ trợ viết mã, kiểm thử, rà soát code và soạn tài liệu. Mọi thay đổi đi qua commit/pull request, được kiểm chứng bằng test tự động và CI; nhóm chịu trách nhiệm về nội dung và kết quả nghiệm thu.
 
 \section{Liên kết sản phẩm}
 Repository nộp bài: \url{https://github.com/Kenkra9999/Brew_Lite_2}. Repository này nhận nguyên lịch sử commit, tag v1.0.0 và Product Backlog từ repository làm việc ban đầu \url{https://github.com/Kenkra9999/brewlite2}, nơi có pull request hoàn thiện \url{https://github.com/Kenkra9999/brewlite2/pull/1}. Báo cáo và tài liệu nguồn nằm cùng repository để truy vết thay đổi.

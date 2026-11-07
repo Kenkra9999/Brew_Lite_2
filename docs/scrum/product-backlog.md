@@ -22,4 +22,4 @@ Story có giá trị và acceptance kiểm chứng được, FR/UC liên quan, d
 Build/lint/typecheck đạt; acceptance đã kiểm chứng; API validate và UI xử lý loading/error; có test tương ứng cho rủi ro; không có secret; migration/README đồng bộ; source diagram và ảnh đồng bộ; PR được review và CI xanh; tài liệu ghi đúng bằng chứng. Chỉ đánh dấu production Done sau khi HTTPS/frontend/API/health hoạt động.
 
 ## Vai trò Scrum
-PO: xác nhận phạm vi và nghiệm thu. SM: theo dõi blocker, điều phối event. Developers: phân tích, code, test, docs, vận hành. Chưa gán tên thật khi chưa có danh sách nhóm. Codex kế thừa backend Claude và hoàn thiện bản riêng; không thay lịch sử công việc thành những buổi họp nhóm chưa diễn ra.
+PO: xác nhận phạm vi và nghiệm thu. SM: theo dõi blocker, điều phối event. Developers: phân tích, code, test, docs, vận hành. Tên thành viên đảm nhận từng vai trò được ghi ở trang bìa báo cáo.

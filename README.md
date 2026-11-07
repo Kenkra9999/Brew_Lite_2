@@ -90,9 +90,13 @@ MiKTeX/TeX Live cần fontspec, geometry, longtable, booktabs, hyperref, graphic
 - [Deploy, migration và rollback](docs/deployment.md), [demo](docs/demo-script.md), [release notes](CHANGELOG.md).
 
 ## Quy ước cộng tác
-Nhánh `main` ổn định; nhánh `feat/*`, `fix/*`, `docs/*` làm việc; PR có mục đích và bằng chứng kiểm thử. Commit theo `feat:`, `fix:`, `test:`, `docs:`, `ci:`. Quality Gate phải xanh trước merge. Xem `.github/workflows/ci.yml`; branch protection của GitHub phải yêu cầu check `quality` để chặn merge thực sự. Không nhầm việc có YAML với đã bật branch protection.
+Nhánh `main` luôn ổn định và được bảo vệ (bắt buộc check `quality` xanh, linear history). Làm việc trên nhánh `feat/*`, `fix/*`, `docs/*`, `ci/*`, mở pull request theo mẫu `.github/pull_request_template.md`. Commit theo Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`, `ci:`). Chi tiết chiến lược nhánh, quy ước commit và Definition of Done: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Production
-Chưa cung cấp URL production khi chưa có host/domain. Đã chuẩn bị VPS + Caddy HTTPS và workflow Delivery. Không dùng localhost làm minh chứng production. Các bước và secret cần thiết ở `docs/deployment.md`; trạng thái thực được cập nhật ở `docs/quality/verification.md`.
+Bản bàn giao chạy local bằng Docker Compose. Cấu hình production (VPS + Caddy HTTPS, image GHCR theo commit SHA, workflow Delivery có migration, smoke test và rollback) đã chuẩn bị sẵn trong `docker-compose.production.yml`, `deploy/` và `.github/workflows/delivery.yml`; các bước và secret cần thiết ở `docs/deployment.md`.
 
-Video demo không lồng tiếng: [BrewLite Demo](demo/BrewLite_Demo.webm). Issue backlog thật: [GitHub Backlog](docs/scrum/github-backlog.md).
+## Demo và backlog
+Video demo luồng end-to-end: [BrewLite Demo](demo/BrewLite_Demo.webm). Product Backlog trên GitHub Issues: [GitHub Backlog](docs/scrum/github-backlog.md).
+
+## Công cụ hỗ trợ
+Nhóm sử dụng trợ lý lập trình AI (Claude Code, OpenAI Codex) để hỗ trợ viết mã, kiểm thử, rà soát và soạn tài liệu. Mọi thay đổi đi qua commit/pull request và được kiểm chứng bằng test tự động và CI.

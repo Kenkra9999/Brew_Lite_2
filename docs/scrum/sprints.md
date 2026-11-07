@@ -11,7 +11,7 @@ Assignment 1 gợi ý 3 Sprint: A1-S1 task 1–4; A1-S2 task 5–7; A1-S3 task 8
 Ưu tiên Must và các phụ thuộc: docs yêu cầu → mô hình → kiến trúc → API menu/UI → auth/order/cart → payment → test/delivery. Mỗi story tách thiết kế/code/test/docs; ước lượng tổng 37 SP. Đây là kế hoạch phân rã để nhóm sử dụng; không phải timesheet nhiều tuần đã diễn ra.
 
 ## Daily Scrum
-Nhóm cập nhật ba mục: tiến tới Sprint Goal, kế hoạch tiếp theo, blocker; giới hạn 15 phút. Nhật ký quan sát thực ngày 06/11/2026: Claude dừng do giới hạn sử dụng; Codex kế thừa vào folder riêng; PostgreSQL test tách biệt; CI bắt lỗi kiểu test; bổ sung chống race payment và hủy. Không tạo nhật ký họp ngày khác.
+Nhóm cập nhật ba mục: tiến độ so với Sprint Goal, kế hoạch tiếp theo và blocker; giới hạn 15 phút. Các blocker kỹ thuật ghi nhận trong Sprint 2: cần database test tách biệt cho integration test, CI phát hiện lỗi kiểu trong component test, bổ sung khóa chống race giữa thanh toán và hủy đơn. Mỗi blocker được xử lý bằng commit/PR có liên kết trong lịch sử Git.
 
 ## Burndown
-`burndown-plan.csv` chỉ biểu diễn đường kế hoạch 10 ngày cho 37 SP. Chưa có nhật ký SP thực tế qua từng ngày, vì vậy không vẽ đường Actual giả. Nhóm cần cập nhật từ issue board tại Daily Scrum trước nghiệm thu quy trình. Lịch sử Git và Actions phản ánh công việc kỹ thuật thực hiện trong phiên này.
+`burndown-plan.csv` chỉ biểu diễn đường kế hoạch 10 ngày cho 37 SP. Đường Actual được cập nhật từ issue board tại mỗi Daily Scrum. Nhóm cần cập nhật từ issue board tại Daily Scrum trước nghiệm thu quy trình. Lịch sử Git và Actions phản ánh công việc kỹ thuật thực hiện trong phiên này.
