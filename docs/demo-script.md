@@ -10,4 +10,4 @@ Thời lượng gợi ý 7–10 phút. Chạy Compose và mở web/API health tr
 6. Mở test PAY-T03 cho 10 payment cùng key và INT-T09 cho 20 order tranh 5 phần; trình bày kết quả thật. Thử transition sai và xem 409 (1 phút).
 7. Cho xem PR/Actions lỗi→sửa→xanh, Docker images, README, LaTeX/PDF và sơ đồ. Phân biệt local/CD cấu hình với production đã deploy. Ghi nhận feedback thật của giảng viên thành issue (1–2 phút).
 
-Nếu quay video, ghi màn hình phiên demo thật; không dựng ảnh giả để chứng minh CI hay URL. Có video quay tự động từ phiên ứng dụng thật tại demo/BrewLite_Demo.webm; không lồng tiếng. Kịch bản trên dùng cho demo trực tiếp có giải thích.
+Video ghi màn hình luồng end-to-end trên ứng dụng chạy thật: `demo/BrewLite_Demo.webm` (không lồng tiếng). Kịch bản trên dùng cho demo trực tiếp có giải thích.
