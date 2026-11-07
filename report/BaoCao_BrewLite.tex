@@ -65,7 +65,7 @@ Báo cáo kết hợp 10 task của Assignment 1 và 5 task tuần tự của As
 Nguồn backend ban đầu được kế thừa từ phiên làm việc Claude Code. Codex hoàn thiện trên thư mục riêng, bổ sung frontend, sửa lỗi đồng thời, tài liệu và kiểm thử; Claude Code rà soát độc lập một số luồng quan trọng. Nhóm sinh viên cần xác nhận thông tin bìa, phân công và nghiệm thu trước khi nộp.
 
 \section{Liên kết sản phẩm}
-Repository: \url{https://github.com/Kenkra9999/brewlite2}. Pull request hoàn thiện: \url{https://github.com/Kenkra9999/brewlite2/pull/1}. Báo cáo và tài liệu nguồn nằm cùng repository để truy vết thay đổi.
+Repository nộp bài: \url{https://github.com/Kenkra9999/Brew_Lite_2}. Repository này nhận nguyên lịch sử commit, tag v1.0.0 và Product Backlog từ repository làm việc ban đầu \url{https://github.com/Kenkra9999/brewlite2}, nơi có pull request hoàn thiện \url{https://github.com/Kenkra9999/brewlite2/pull/1}. Báo cáo và tài liệu nguồn nằm cùng repository để truy vết thay đổi.
 
 
 \chapter{Khai thác và đặc tả yêu cầu}
@@ -589,6 +589,18 @@ HTTPS production & Chưa có host/\allowbreak{}domain và deploy secrets; chưa 
 \bottomrule\end{longtable}\endgroup
 
 \subsection{CI và pull request thật}
+
+\subsubsection{Repository nộp bài Brew\_Lite\_2 (07/\allowbreak{}11/\allowbreak{}2026)}
+\begin{itemize}
+\item Repository: \url{https://github.com/Kenkra9999/Brew_Lite_2} — nhận nguyên lịch sử commit, tag {\small\ttfamily v1.\allowbreak{}0.\allowbreak{}0} và 15 issue backlog (milestone Sprint 1/\allowbreak{}Sprint 2) từ repository làm việc ban đầu.
+\item Push {\small\ttfamily main}: \url{https://github.com/Kenkra9999/Brew_Lite_2/actions/runs/42370367806} — Quality Gate xanh toàn bộ (lint, typecheck, unit, integration PostgreSQL, build, E2E desktop/\allowbreak{}mobile).
+\item Push tag {\small\ttfamily v1.\allowbreak{}0.\allowbreak{}0}: \url{https://github.com/Kenkra9999/Brew_Lite_2/actions/runs/42370368368} — Delivery: quality xanh, build và push hai image {\small\ttfamily ghcr.\allowbreak{}io/\allowbreak{}kenkra9999/\allowbreak{}brew\_\allowbreak{}lite\_\allowbreak{}2-\allowbreak{}api} và {\small\ttfamily -\allowbreak{}web} gắn tag commit SHA; job deploy được skip đúng thiết kế vì chưa có host production.
+\item PR kiểm chứng cổng chất lượng: \url{https://github.com/Kenkra9999/Brew_Lite_2/pull/16} — cố ý thêm {\small\ttfamily console.\allowbreak{}log} vi phạm {\small\ttfamily no-\allowbreak{}console}. Run \url{https://github.com/Kenkra9999/Brew_Lite_2/actions/runs/42370607079} dừng ở {\small\ttfamily npm run lint}, typecheck/\allowbreak{}test/\allowbreak{}build/\allowbreak{}E2E bị skip; GitHub báo merge state {\small\ttfamily BLOCKED}. PR đóng, không merge. Đây là lỗi cố ý để kiểm tra gate, ghi rõ trong mô tả PR.
+\item PR chuyển repository và cập nhật tài liệu: \url{https://github.com/Kenkra9999/Brew_Lite_2/pull/17} — Quality Gate xanh rồi mới merge (squash, linear history).
+\item Branch protection {\small\ttfamily main} bật ngày 07/\allowbreak{}11/\allowbreak{}2026: required check {\small\ttfamily quality}, strict up-to-date, enforce admins, linear history, cấm force push/\allowbreak{}xóa nhánh.
+\end{itemize}
+
+\subsubsection{Repository làm việc ban đầu brewlite2 (06/\allowbreak{}11/\allowbreak{}2026)}
 \begin{itemize}
 \item Repository: \url{https://github.com/Kenkra9999/brewlite2}
 \item PR: \url{https://github.com/Kenkra9999/brewlite2/pull/1}
@@ -664,6 +676,10 @@ Nếu quay video, ghi màn hình phiên demo thật; không dựng ảnh giả �
 
 
 \section{Release notes}
+
+\subsection{Phiên bản 1.0.1 ngày 07 tháng 11 năm 2026}
+Chuyển repository nộp bài sang \url{https://github.com/Kenkra9999/Brew_Lite_2} với nguyên lịch sử commit và tag {\small\ttfamily v1.\allowbreak{}0.\allowbreak{}0}. Tạo lại Product Backlog bằng 15 GitHub Issue chia milestone Sprint 1/\allowbreak{}Sprint 2, bật branch protection cho {\small\ttfamily main} và kiểm chứng lại trên repository mới: Quality Gate xanh trên {\small\ttfamily main}, Delivery xuất image GHCR theo SHA, PR cố ý lỗi lint bị chặn merge. Cập nhật README, tài liệu bằng chứng và báo cáo LaTeX theo repository mới. Không thay đổi mã nguồn ứng dụng; các giới hạn của bản 1.0.0 vẫn giữ nguyên.
+
 
 \subsection{Phiên bản 1.0.0 ngày 06 tháng 11 năm 2026}
 Hoàn thiện luồng menu đến xác nhận: Next.js mobile/\allowbreak{}PWA, NestJS REST, Prisma migration PostgreSQL, JWT/\allowbreak{}bcrypt, size/\allowbreak{}topping, cart persist, WALLET/\allowbreak{}CARD mock, history/\allowbreak{}tracking và staff board. Bổ sung promo/\allowbreak{}loyalty, state machine, optimistic kho, payment key và khóa chống race hủy/\allowbreak{}thanh toán. Có unit/\allowbreak{}integration/\allowbreak{}E2E, Compose local, Quality Gate và workflow xuất image/\allowbreak{}CD, UML và báo cáo LaTeX.
@@ -772,7 +788,7 @@ NFR-09 & PWA & deployment browser & manifest.webmanifest; sw.js; offline.html & 
 \addlinespace[2pt]
 3 & Architecture, ADR, deployment diagram & Có thiết kế; production topology cần cập nhật host thật \\
 \addlinespace[2pt]
-4 & Repo, backlog, menu MVP, CI, merge gate & Repo/\allowbreak{}PR/\allowbreak{}Actions và Scrum docs; xem verification.md \\
+4 & Repo, backlog, menu MVP, CI, merge gate & Repository Brew\_Lite\_2, 15 issue theo milestone Sprint 1/\allowbreak{}2, PR lỗi bị chặn và PR xanh được merge; xem verification.md \\
 \addlinespace[2pt]
 5 & End-to-end, tests, Compose, images/\allowbreak{}CD, production, release & Phần local/\allowbreak{}test/\allowbreak{}CI có bằng chứng; production cần host/\allowbreak{}domain/\allowbreak{}secrets và URL hoạt động \\
 \addlinespace[2pt]
@@ -780,6 +796,7 @@ NFR-09 & PWA & deployment browser & manifest.webmanifest; sw.js; offline.html & 
 
 \subsection{Thông tin nhóm cần bổ sung trước nộp}
 \begin{itemize}
+\item Repository nộp bài: \url{https://github.com/Kenkra9999/Brew_Lite_2} (public); cấp quyền/\allowbreak{}gửi link cho giảng viên.
 \item Điền nhóm, lớp, thành viên/\allowbreak{}MSSV trong report/\allowbreak{}thong-tin.tex; xác nhận tên GVHD theo mẫu.
 \item Tổ chức demo/\allowbreak{}Review với giảng viên, ghi feedback và vai trò Scrum thực.
 \item Cung cấp môi trường production, deploy, cập nhật URL frontend/\allowbreak{}API/\allowbreak{}health và sơ đồ thực tế.
