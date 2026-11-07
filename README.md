@@ -2,7 +2,7 @@
 
 Ứng dụng đặt cà phê không dùng tiền mặt cho môn Công nghệ Phần mềm, SGU, HK I 2026–2027. Next.js 15 + NestJS 11 + PostgreSQL 17 + Prisma. Thanh toán hoàn toàn mô phỏng.
 
-Repository: https://github.com/Kenkra9999/brewlite2
+Repository nộp bài: https://github.com/Kenkra9999/Brew_Lite_2 (chuyển nguyên lịch sử commit, tag `v1.0.0` và backlog từ repository làm việc ban đầu https://github.com/Kenkra9999/brewlite2 ngày 07/11/2026).
 
 ## Chạy nhanh bằng Docker
 Yêu cầu Docker Desktop / Docker Engine và Compose v2, khoảng 4 GB RAM trống. Chạy ở thư mục repository:

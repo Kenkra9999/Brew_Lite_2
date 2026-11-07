@@ -143,7 +143,7 @@ Báo cáo kết hợp 10 task của Assignment 1 và 5 task tuần tự của As
 Nguồn backend ban đầu được kế thừa từ phiên làm việc Claude Code. Codex hoàn thiện trên thư mục riêng, bổ sung frontend, sửa lỗi đồng thời, tài liệu và kiểm thử; Claude Code rà soát độc lập một số luồng quan trọng. Nhóm sinh viên cần xác nhận thông tin bìa, phân công và nghiệm thu trước khi nộp.
 
 \section{Liên kết sản phẩm}
-Repository: \url{https://github.com/Kenkra9999/brewlite2}. Pull request hoàn thiện: \url{https://github.com/Kenkra9999/brewlite2/pull/1}. Báo cáo và tài liệu nguồn nằm cùng repository để truy vết thay đổi.
+Repository nộp bài: \url{https://github.com/Kenkra9999/Brew_Lite_2}. Repository này nhận nguyên lịch sử commit, tag v1.0.0 và Product Backlog từ repository làm việc ban đầu \url{https://github.com/Kenkra9999/brewlite2}, nơi có pull request hoàn thiện \url{https://github.com/Kenkra9999/brewlite2/pull/1}. Báo cáo và tài liệu nguồn nằm cùng repository để truy vết thay đổi.
 '''
 body=[preamble]
 def chapter(title,paths):
